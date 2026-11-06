@@ -9,17 +9,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const scrypt = promisify(crypto.scrypt);
 
-// REQUIRED ENVIRONMENT VARIABLES
-const required = [
-  "DATABASE_URL",
-  "ADMIN_SETUP_TOKEN",
-  "PAYSTACK_SECRET_KEY"
-];
-
-for (const key of required) {
-  if (!process.env[key]) {
-    console.error("Missing environment variable:", key);
-    process.exit(// TIKGROW CUSTOMER PRICES PER 1,000
+process.exit(// TIKGROW CUSTOMER PRICES PER 1,000
 const PRICES = {
   "TikTok Likes": 25,
   "Comments": 250,
