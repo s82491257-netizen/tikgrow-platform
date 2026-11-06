@@ -1,12 +1,13 @@
 
+
 {
   "name": "savcel-hub",
-  "version": "1.0.0",
-  "description": "SavCel Hub Digital Marketplace and Reseller Platform",
+  "version": "2.0.0",
+  "description": "SavCel Hub - Premium Digital Marketplace and Reseller Platform",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "node server.js"
+    "dev": "node --watch server.js"
   },
   "engines": {
     "node": ">=20"
@@ -21,7 +22,7 @@
     "express-session": "^1.18.1",
     "helmet": "^8.0.0",
     "multer": "^1.4.5-lts.1",
-    "pg": "^8.13.1"
+    "pg": "^8.13.1",
+    "uuid": "^11.0.5"
   }
 }
-
