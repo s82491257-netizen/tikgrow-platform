@@ -1,13 +1,16 @@
 
+
+require("dotenv").config();
+
 const { Pool } = require("pg");
 
 if (!process.env.DATABASE_URL) {
-  throw new Error("DATABASE_URL environment variable is missing");
+  console.warn("DATABASE_URL is not configured yet.");
 }
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === "production"
+  ssl: process.env.DATABASE_SSL === "true"
     ? { rejectUnauthorized: false }
     : false,
   max: 10,
@@ -16,7 +19,7 @@ const pool = new Pool({
 });
 
 pool.on("error", (error) => {
-  console.error("Unexpected database connection error:", error.message);
+  console.error("Database connection error:", error.message);
 });
 
 async function testDatabase() {
