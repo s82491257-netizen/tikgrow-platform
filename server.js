@@ -67,7 +67,6 @@ app.get("/api/db-health", async (req, res) => {
 // PUBLIC AUTHENTICATION ROUTES
 app.use("/api/auth", authRoutes);
 const productsRoutes = require("./routes/products");
-
 // LOGIN AND REGISTRATION PAGE
 app.get("/auth", (req, res) => {
   const authPage = path.join(
