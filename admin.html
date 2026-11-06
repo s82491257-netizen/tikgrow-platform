@@ -4,461 +4,239 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>TIKGROW | Admin Control Center</title>
+<title>TIKGROW Admin</title>
 <style>
-:root{
-  --bg:#080a12;
-  --panel:#111725;
-  --panel2:#171f30;
-  --blue:#25f4ee;
-  --pink:#fe2c55;
-  --white:#f6f8ff;
-  --muted:#8994aa;
-  --border:#263248;
-}
 *{box-sizing:border-box}
-body{
-  margin:0;background:var(--bg);color:var(--white);
-  font-family:Inter,Arial,sans-serif;
-}
-button,input,select{font:inherit}
-button{cursor:pointer}
-.layout{max-width:1450px;margin:auto;padding:22px}
-.topbar{
-  display:flex;align-items:center;justify-content:space-between;
-  gap:15px;flex-wrap:wrap;margin-bottom:28px;
-}
-.brand{font-size:25px;font-weight:900;letter-spacing:2px}
-.brand span{color:var(--blue)}
-.top-right{display:flex;gap:10px;align-items:center}
-.pill{
-  background:#15232c;border:1px solid #24515a;
-  color:var(--blue);padding:9px 13px;border-radius:30px;font-size:12px;
-}
-.panel{
-  background:linear-gradient(145deg,#141c2b,#0e1420);
-  border:1px solid var(--border);border-radius:18px;padding:22px;
-  box-shadow:0 12px 35px #0004;
-}
-.hero{
-  padding:28px;margin-bottom:22px;
-  background:radial-gradient(circle at 90% 10%,#173d4b 0,transparent 38%),
-  linear-gradient(120deg,#151d2e,#101522);
-}
-.hero h1{font-size:30px;margin:0 0 8px}
-.hero p{color:var(--muted);margin:0}
-.eyebrow{color:var(--blue);font-size:11px;font-weight:bold;letter-spacing:2px}
-.stats{
-  display:grid;grid-template-columns:repeat(4,minmax(0,1fr));
-  gap:15px;margin:20px 0;
-}
-.stat{padding:20px}
-.stat small{color:var(--muted)}
-.stat strong{display:block;font-size:30px;margin-top:12px}
-.stat .accent{color:var(--blue)}
-.stat .pink{color:var(--pink)}
-.section-title{
-  display:flex;justify-content:space-between;align-items:center;
-  flex-wrap:wrap;gap:12px;margin-bottom:18px;
-}
-.section-title h2{font-size:20px;margin:0}
-.tools{
-  display:grid;grid-template-columns:2fr 1fr 1fr auto;
-  gap:10px;margin-bottom:20px;
-}
-input,select{
-  width:100%;padding:13px 14px;border-radius:10px;
-  border:1px solid var(--border);background:#0b111d;color:white;
-  outline:none;min-width:0;
-}
-input:focus,select:focus{border-color:var(--blue)}
-.btn{
-  border:0;border-radius:10px;padding:12px 16px;
-  font-weight:800;background:var(--blue);color:#061014;
-}
-.btn:hover{filter:brightness(1.08)}
-.btn.secondary{
-  background:#202c40;color:white;border:1px solid #34435c;
-}
-.btn.pink{background:var(--pink);color:white}
-.orders{display:grid;gap:13px}
-.order{
-  border:1px solid var(--border);background:#0d1421;
-  padding:18px;border-radius:14px;
-}
-.order-head{
-  display:flex;justify-content:space-between;align-items:center;
-  gap:10px;flex-wrap:wrap;margin-bottom:14px;
-}
-.order-id{font-weight:900;color:var(--blue);font-size:16px}
-.status{
-  font-size:11px;padding:7px 10px;border-radius:30px;
-  background:#283448;color:#dce7ff;
-}
-.status.paid,.status.completed{background:#12372f;color:#6ff0ba}
-.status.new{background:#332d19;color:#ffd978}
-.status.cancelled{background:#3b1c29;color:#ff91a8}
-.status.in-progress{background:#182d48;color:#85c8ff}
-.order-info{
-  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
-  gap:13px;margin:12px 0 17px;
-}
-.info small{display:block;color:var(--muted);font-size:11px;margin-bottom:5px}
-.info div{overflow-wrap:anywhere;font-size:13px}
-.order-actions{
-  display:flex;gap:9px;align-items:center;flex-wrap:wrap;
-}
-.order-actions select{max-width:210px}
-.empty{text-align:center;padding:45px;color:var(--muted)}
-.message{color:var(--muted);font-size:13px;margin:10px 0}
-.hidden{display:none!important}
-.login-wrap{
-  max-width:430px;margin:12vh auto;padding:22px;
-}
-.login-wrap h1{margin-top:0}
-.login-wrap input{margin:15px 0}
-.footer{text-align:center;color:var(--muted);font-size:11px;padding:25px}
-@media(max-width:800px){
- .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
- .tools{grid-template-columns:1fr 1fr}
- .tools input{grid-column:1/-1}
- .order-info{grid-template-columns:1fr 1fr}
-}
-@media(max-width:480px){
- .layout{padding:13px}
- .hero h1{font-size:24px}
- .stats{gap:9px}
- .stat{padding:14px}
- .stat strong{font-size:24px}
- .tools{grid-template-columns:1fr}
- .tools input{grid-column:auto}
- .order-info{grid-template-columns:1fr 1fr}
- .order-actions select{max-width:none;flex:1}
+body{margin:0;background:#080a10;color:#fff;font-family:Arial,sans-serif}
+header{padding:20px;background:#111722;border-bottom:1px solid #283341;display:flex;justify-content:space-between;align-items:center;gap:10px}
+.logo{font-size:25px;font-weight:900}.logo span{color:#25f4ee}
+main{max-width:1150px;margin:auto;padding:20px}
+h1{font-size:27px}
+.muted{color:#9ba5b5;font-size:13px}
+button{border:0;border-radius:8px;padding:11px 14px;font-weight:bold;cursor:pointer;background:#25f4ee;color:#061014}
+button.secondary{background:#252d3a;color:white}
+button.danger{background:#fe2c55;color:white}
+input,select{background:#101722;color:white;border:1px solid #354151;border-radius:8px;padding:11px;width:100%;min-width:0}
+.login{max-width:420px;margin:90px auto;background:#121a26;border:1px solid #263444;border-radius:18px;padding:25px}
+.login button{width:100%;margin-top:15px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:22px 0}
+.stat,.panel{background:#121a26;border:1px solid #263444;border-radius:14px;padding:17px}
+.stat strong{display:block;font-size:27px;margin-top:10px;color:#25f4ee}
+.toolbar{display:grid;grid-template-columns:2fr 1fr auto;gap:10px;margin:20px 0}
+.order{background:#121a26;border:1px solid #293545;border-radius:14px;padding:18px;margin:13px 0}
+.top{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.id{color:#25f4ee;font-weight:bold}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:15px}
+.detail{background:#0b111b;padding:11px;border-radius:9px;overflow-wrap:anywhere}
+.detail small{display:block;color:#93a0b1;margin-bottom:5px}
+.actions{display:grid;grid-template-columns:1fr 1fr auto;gap:9px;margin-top:14px}
+.price{display:flex;gap:8px;margin-top:13px}
+.price input{max-width:160px}
+.status{padding:6px 10px;border-radius:20px;background:#263341;font-size:12px}
+a{color:#25f4ee}
+#message{margin:15px 0;color:#25f4ee}
+@media(max-width:650px){
+.stats{grid-template-columns:repeat(2,1fr)}
+.toolbar{grid-template-columns:1fr}
+.grid{grid-template-columns:1fr}
+.actions{grid-template-columns:1fr}
+.price input{max-width:none}
 }
 </style>
 </head>
 <body>
+<header>
+ <div class="logo">TIK<span>GROW</span> <small style="font-size:12px;color:#aaa">ADMIN</small></div>
+ <button class="secondary" onclick="logout()">Logout</button>
+</header>
 
-<section id="loginScreen" class="login-wrap panel">
-  <div class="brand">TIK<span>GROW</span></div>
-  <p class="eyebrow">ADMIN CONTROL CENTER</p>
-  <h1>Welcome back.</h1>
-  <p style="color:var(--muted)">Sign in to manage your promotion marketplace.</p>
-  <input id="token" type="password" placeholder="Admin security token">
-  <button class="btn" style="width:100%" onclick="login()">Access Dashboard</button>
-  <p id="loginMessage" class="message"></p>
-</section>
+<div id="loginBox" class="login">
+ <h1>Admin Login</h1>
+ <p class="muted">Secure TIKGROW management dashboard</p>
+ <input id="token" type="password" placeholder="Admin access token">
+ <button onclick="login()">ACCESS DASHBOARD</button>
+ <div id="loginMessage" class="muted"></div>
+</div>
 
-<main id="app" class="layout hidden">
-  <header class="topbar">
-    <div class="brand">TIK<span>GROW</span></div>
-    <div class="top-right">
-      <span class="pill">● ADMIN ONLINE</span>
-      <button class="btn secondary" onclick="logout()">Logout</button>
-    </div>
-  </header>
+<main id="dashboard" hidden>
+ <h1>Dashboard Overview</h1>
+ <p class="muted">Manage customer orders, campaign prices and promotion progress.</p>
 
-  <section class="panel hero">
-    <p class="eyebrow">CONTROL CENTER / OVERVIEW</p>
-    <h1>Welcome to TIKGROW.</h1>
-    <p>Manage customer orders and promotion campaigns from one place.</p>
-  </section>
+ <div class="stats">
+  <div class="stat">Total Orders<strong id="total">0</strong></div>
+  <div class="stat">New Orders<strong id="new">0</strong></div>
+  <div class="stat">Paid Orders<strong id="paid">0</strong></div>
+  <div class="stat">Completed<strong id="completed">0</strong></div>
+ </div>
 
-  <section class="stats">
-    <div class="panel stat">
-      <small>Total orders</small><strong id="total">0</strong>
-    </div>
-    <div class="panel stat">
-      <small>New orders</small><strong class="accent" id="newCount">0</strong>
-    </div>
-    <div class="panel stat">
-      <small>Paid orders</small><strong class="accent" id="paidCount">0</strong>
-    </div>
-    <div class="panel stat">
-      <small>Completed orders</small><strong class="pink" id="completedCount">0</strong>
-    </div>
-  </section>
+ <div class="toolbar">
+  <input id="search" placeholder="Search order, phone or service..." oninput="render()">
+  <select id="filter" onchange="render()">
+   <option value="">All Orders</option>
+   <option>New</option>
+   <option>Awaiting Payment</option>
+   <option>Paid</option>
+   <option>In Progress</option>
+   <option>Completed</option>
+   <option>Cancelled</option>
+  </select>
+  <button onclick="loadOrders()">REFRESH</button>
+ </div>
 
-  <section class="panel">
-    <div class="section-title">
-      <div>
-        <p class="eyebrow">CUSTOMER MANAGEMENT</p>
-        <h2>Order Management</h2>
-      </div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn secondary" onclick="loadOrders()">↻ Refresh</button>
-        <button class="btn" onclick="exportCSV()">Export CSV</button>
-      </div>
-    </div>
-
-    <div class="tools">
-      <input id="search" placeholder="Search order ID, customer, contact..." oninput="renderOrders()">
-      <select id="serviceFilter" onchange="renderOrders()">
-        <option value="">All services</option>
-      </select>
-      <select id="statusFilter" onchange="renderOrders()">
-        <option value="">All statuses</option>
-        <option>New</option>
-        <option>Awaiting Payment</option>
-        <option>Paid</option>
-        <option>In Progress</option>
-        <option>Completed</option>
-        <option>Cancelled</option>
-      </select>
-      <button class="btn secondary" onclick="clearFilters()">Clear</button>
-    </div>
-
-    <p id="message" class="message">Loading orders...</p>
-    <div id="orders" class="orders"></div>
-  </section>
-
-  <div class="footer">TIKGROW ADMIN • PRIVATE MANAGEMENT AREA</div>
+ <div class="top">
+  <h2>Customer Orders</h2>
+  <button class="secondary" onclick="exportCSV()">EXPORT CSV</button>
+ </div>
+ <div id="message"></div>
+ <div id="orders"></div>
 </main>
 
 <script>
-const API="/api/admin/orders";
-let adminToken="";
-let allOrders=[];
+let orders=[];
+let adminToken=sessionStorage.getItem("tikgrow_admin_token")||"";
 
-async function login(){
-  const token=document.getElementById("token").value.trim();
-  const msg=document.getElementById("loginMessage");
-  if(!token){msg.textContent="Enter your admin token.";return;}
-
-  msg.textContent="Checking access...";
-  try{
-    const response=await fetch(API,{headers:{"x-admin-token":token}});
-    const result=await response.json();
-    if(!response.ok) throw new Error(result.message||"Access denied");
-
-    adminToken=token;
-    sessionStorage.setItem("tikgrow_admin_token",token);
-    showDashboard();
-    allOrders=result.orders||[];
-    updateDashboard();
-  }catch(error){
-    msg.textContent=error.message;
-  }
+async function api(url,options={}){
+ options.headers={...(options.headers||{}),"x-admin-token":adminToken};
+ const response=await fetch(url,options);
+ const data=await response.json();
+ if(!response.ok)throw new Error(data.error||"Request failed");
+ return data;
 }
 
-function showDashboard(){
-  document.getElementById("loginScreen").classList.add("hidden");
-  document.getElementById("app").classList.remove("hidden");
+async function login(){
+ adminToken=document.getElementById("token").value.trim();
+ if(!adminToken){document.getElementById("loginMessage").textContent="Enter your admin token.";return;}
+ try{
+  await loadOrders();
+  sessionStorage.setItem("tikgrow_admin_token",adminToken);
+  document.getElementById("loginBox").hidden=true;
+  document.getElementById("dashboard").hidden=false;
+ }catch(e){
+  document.getElementById("loginMessage").textContent=e.message;
+ }
 }
 
 function logout(){
-  sessionStorage.removeItem("tikgrow_admin_token");
-  adminToken="";
-  allOrders=[];
-  document.getElementById("app").classList.add("hidden");
-  document.getElementById("loginScreen").classList.remove("hidden");
-  document.getElementById("token").value="";
+ sessionStorage.removeItem("tikgrow_admin_token");
+ adminToken="";
+ location.reload();
 }
 
 async function loadOrders(){
-  document.getElementById("message").textContent="Refreshing orders...";
-  try{
-    const response=await fetch(API,{
-      headers:{"x-admin-token":adminToken}
-    });
-    const result=await response.json();
-    if(!response.ok) throw new Error(result.message||"Could not load orders");
-    allOrders=result.orders||[];
-    updateDashboard();
-  }catch(error){
-    document.getElementById("message").textContent=error.message;
-  }
+ const data=await api("/api/admin/orders");
+ orders=Array.isArray(data)?data:(data.orders||[]);
+ render();
+ updateStats();
+ document.getElementById("message").textContent="Orders refreshed successfully.";
 }
 
-function updateDashboard(){
-  document.getElementById("total").textContent=allOrders.length;
-  document.getElementById("newCount").textContent=allOrders.filter(o=>o.status==="New").length;
-  document.getElementById("paidCount").textContent=allOrders.filter(o=>o.status==="Paid").length;
-  document.getElementById("completedCount").textContent=allOrders.filter(o=>o.status==="Completed").length;
+function updateStats(){
+ document.getElementById("total").textContent=orders.length;
+ document.getElementById("new").textContent=orders.filter(o=>o.status==="New").length;
+ document.getElementById("paid").textContent=orders.filter(o=>o.status==="Paid"||o.paid_at).length;
+ document.getElementById("completed").textContent=orders.filter(o=>o.status==="Completed").length;
+}
 
-  const services=[...new Set(allOrders.map(o=>o.service).filter(Boolean))];
-  const filter=document.getElementById("serviceFilter");
-  const previous=filter.value;
-  filter.innerHTML='<option value="">All services</option>';
-  services.forEach(service=>{
-    const option=document.createElement("option");
-    option.value=service;
-    option.textContent=service;
-    filter.appendChild(option);
+function escapeHTML(value){
+ return String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+
+function render(){
+ const query=document.getElementById("search").value.toLowerCase();
+ const filter=document.getElementById("filter").value;
+ const list=orders.filter(o=>{
+  const text=[o.order_code,o.customer_name,o.contact,o.service,o.tiktok_link,o.details].join(" ").toLowerCase();
+  return text.includes(query)&&(!filter||o.status===filter);
+ });
+ const area=document.getElementById("orders");
+ if(!list.length){area.innerHTML='<div class="panel">No matching orders found.</div>';return;}
+ area.innerHTML=list.map(o=>{
+  const id=Number(o.id);
+  const code=escapeHTML(o.order_code);
+  const phone=escapeHTML(o.contact);
+  const price=Number(o.price_ghs||0);
+  const link=String(o.tiktok_link||"");
+  const safeLink=/^https:\/\/(www\.)?tiktok\.com\//i.test(link)?link:"";
+  return `
+  <section class="order">
+   <div class="top">
+    <span class="id">${code}</span>
+    <span class="status">${escapeHTML(o.status)}</span>
+   </div>
+   <div class="grid">
+    <div class="detail"><small>Customer</small>${escapeHTML(o.customer_name||"Customer")}</div>
+    <div class="detail"><small>Phone</small>${phone}</div>
+    <div class="detail"><small>Service</small>${escapeHTML(o.service)}</div>
+    <div class="detail"><small>Price</small>GH₵${price.toFixed(2)}</div>
+    <div class="detail"><small>TikTok Link</small>${safeLink?`<a href="${escapeHTML(safeLink)}" target="_blank" rel="noopener">Open TikTok</a>`:"Not available"}</div>
+    <div class="detail"><small>Payment</small>${o.paid_at?"Paid":"Not confirmed as paid"}</div>
+    <div class="detail"><small>Details</small>${escapeHTML(o.details||"None")}</div>
+    <div class="detail"><small>Created</small>${escapeHTML(o.created_at||"")}</div>
+   </div>
+   <div class="price">
+    <input type="number" min="0.01" step="0.01" id="price-${id}" value="${price||""}" placeholder="Price in GH₵">
+    <button onclick="setPrice(${id})">SAVE PRICE</button>
+   </div>
+   <div class="actions">
+    <select id="status-${id}">
+     ${["New","Awaiting Payment","In Progress","Completed","Cancelled"].map(s=>`<option ${o.status===s?"selected":""}>${s}</option>`).join("")}
+    </select>
+    <button class="secondary" onclick="updateStatus(${id})">UPDATE STATUS</button>
+    <button class="secondary" onclick="copyCode('${code}')">COPY ID</button>
+   </div>
+  </section>`;
+ }).join("");
+}
+
+async function setPrice(id){
+ const value=Number(document.getElementById("price-"+id).value);
+ if(!Number.isFinite(value)||value<=0){alert("Enter a valid price.");return;}
+ try{
+  await api("/api/admin/orders/"+id+"/price",{
+   method:"PATCH",
+   headers:{"Content-Type":"application/json"},
+   body:JSON.stringify({price_ghs:value})
   });
-  filter.value=previous;
-  renderOrders();
+  document.getElementById("message").textContent="Price saved. Customer can now check the order for payment.";
+  await loadOrders();
+ }catch(e){alert(e.message);}
 }
 
-function makeInfo(label,value){
-  const wrapper=document.createElement("div");
-  wrapper.className="info";
-  const small=document.createElement("small");
-  small.textContent=label;
-  const content=document.createElement("div");
-  content.textContent=value||"Not provided";
-  wrapper.append(small,content);
-  return wrapper;
-}
-
-function renderOrders(){
-  const box=document.getElementById("orders");
-  box.innerHTML="";
-  const search=document.getElementById("search").value.toLowerCase();
-  const service=document.getElementById("serviceFilter").value;
-  const status=document.getElementById("statusFilter").value;
-
-  const filtered=allOrders.filter(o=>{
-    const text=[o.order_code,o.customer_name,o.contact,o.service,o.tiktok_link].join(" ").toLowerCase();
-    return text.includes(search)&&(!service||o.service===service)&&(!status||o.status===status);
+async function updateStatus(id){
+ const status=document.getElementById("status-"+id).value;
+ try{
+  await api("/api/admin/orders/"+id,{
+   method:"PATCH",
+   headers:{"Content-Type":"application/json"},
+   body:JSON.stringify({status})
   });
-
-  document.getElementById("message").textContent=
-    filtered.length+" order(s) displayed";
-
-  if(!filtered.length){
-    const empty=document.createElement("div");
-    empty.className="empty";
-    empty.textContent="No matching orders found.";
-    box.appendChild(empty);
-    return;
-  }
-
-  filtered.forEach(order=>{
-    const card=document.createElement("article");
-    card.className="order";
-
-    const head=document.createElement("div");
-    head.className="order-head";
-
-    const id=document.createElement("div");
-    id.className="order-id";
-    id.textContent=order.order_code||"Order";
-
-    const badge=document.createElement("span");
-    badge.className="status "+String(order.status||"new").toLowerCase().replaceAll(" ","-");
-    badge.textContent=order.status||"New";
-    head.append(id,badge);
-
-    const info=document.createElement("div");
-    info.className="order-info";
-    info.append(
-      makeInfo("CUSTOMER",order.customer_name),
-      makeInfo("WHATSAPP / CONTACT",order.contact),
-      makeInfo("SERVICE",order.service),
-      makeInfo("CAMPAIGN DETAILS",order.details),
-      makeInfo("ORDER DATE",order.created_at?new Date(order.created_at).toLocaleString():"Not available")
-    );
-
-    const linkWrap=document.createElement("div");
-    linkWrap.className="info";
-    const linkLabel=document.createElement("small");
-    linkLabel.textContent="TIKTOK LINK";
-    const link=document.createElement("a");
-    link.href=order.tiktok_link||"#";
-    link.target="_blank";
-    link.rel="noopener noreferrer";
-    link.textContent=order.tiktok_link||"Not provided";
-    link.style.color="var(--blue)";
-    linkWrap.append(linkLabel,link);
-    info.appendChild(linkWrap);
-
-    const actions=document.createElement("div");
-    actions.className="order-actions";
-
-    const select=document.createElement("select");
-    ["New","Awaiting Payment","Paid","In Progress","Completed","Cancelled"].forEach(s=>{
-      const option=document.createElement("option");
-      option.value=s;
-      option.textContent=s;
-      option.selected=order.status===s;
-      select.appendChild(option);
-    });
-
-    const update=document.createElement("button");
-    update.className="btn";
-    update.textContent="Update Status";
-    update.onclick=()=>updateStatus(order.id,select.value,update);
-
-    const copy=document.createElement("button");
-    copy.className="btn secondary";
-    copy.textContent="Copy Order ID";
-    copy.onclick=()=>{
-      if(navigator.clipboard) navigator.clipboard.writeText(order.order_code||"");
-      else alert(order.order_code||"");
-    };
-
-    actions.append(select,update,copy);
-    card.append(head,info,actions);
-    box.appendChild(card);
-  });
+  await loadOrders();
+ }catch(e){alert(e.message);}
 }
 
-async function updateStatus(id,status,button){
-  if(!id){alert("Order ID is missing.");return;}
-  button.disabled=true;
-  button.textContent="Updating...";
-  try{
-    const response=await fetch(API+"/"+encodeURIComponent(id),{
-      method:"PATCH",
-      headers:{
-        "Content-Type":"application/json",
-        "x-admin-token":adminToken
-      },
-      body:JSON.stringify({status})
-    });
-    const result=await response.json();
-    if(!response.ok) throw new Error(result.message||"Update failed");
-    await loadOrders();
-    alert("Order status updated.");
-  }catch(error){
-    alert(error.message);
-  }finally{
-    button.disabled=false;
-    button.textContent="Update Status";
-  }
-}
-
-function clearFilters(){
-  document.getElementById("search").value="";
-  document.getElementById("serviceFilter").value="";
-  document.getElementById("statusFilter").value="";
-  renderOrders();
+function copyCode(code){
+ if(navigator.clipboard)navigator.clipboard.writeText(code).then(()=>alert("Order ID copied."));
+ else alert(code);
 }
 
 function exportCSV(){
-  const rows=[["Order ID","Customer","Contact","Service","TikTok Link","Details","Status","Date"]];
-  allOrders.forEach(o=>rows.push([
-    o.order_code,o.customer_name,o.contact,o.service,
-    o.tiktok_link,o.details,o.status,o.created_at
-  ]));
-  const csv=rows.map(row=>row.map(v=>'"'+String(v??"").replaceAll('"','""')+'"').join(",")).join("\n");
-  const blob=new Blob([csv],{type:"text/csv;charset=utf-8"});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement("a");
-  a.href=url;
-  a.download="tikgrow-orders.csv";
-  a.click();
-  URL.revokeObjectURL(url);
+ const rows=[["Order ID","Phone","Service","Price GHS","Status","Created"]];
+ orders.forEach(o=>rows.push([o.order_code,o.contact,o.service,o.price_ghs,o.status,o.created_at]));
+ const csv=rows.map(row=>row.map(v=>'"'+String(v??"").replace(/"/g,'""')+'"').join(",")).join("\n");
+ const blob=new Blob([csv],{type:"text/csv"});
+ const url=URL.createObjectURL(blob);
+ const a=document.createElement("a");
+ a.href=url;a.download="tikgrow-orders.csv";a.click();
+ URL.revokeObjectURL(url);
 }
 
-async function start(){
-  const saved=sessionStorage.getItem("tikgrow_admin_token");
-  if(!saved)return;
-  adminToken=saved;
-  try{
-    const response=await fetch(API,{headers:{"x-admin-token":adminToken}});
-    const result=await response.json();
-    if(!response.ok)throw new Error("Session expired");
-    showDashboard();
-    allOrders=result.orders||[];
-    updateDashboard();
-  }catch{
-    sessionStorage.removeItem("tikgrow_admin_token");
-    adminToken="";
-  }
+if(adminToken){
+ loadOrders().then(()=>{
+  document.getElementById("loginBox").hidden=true;
+  document.getElementById("dashboard").hidden=false;
+ }).catch(()=>logout());
 }
-start();
 </script>
 </body>
 </html>
+
