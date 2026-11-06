@@ -1,0 +1,267 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#eaf6ff">
+<title>Checkout | SavCel Hub</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#f3f9ff;color:#17324d;font-family:Arial,sans-serif}
+header{background:white;padding:18px 5%;display:flex;justify-content:space-between;border-bottom:1px solid #dcecf9}
+.logo{font-size:23px;font-weight:900;color:#1684d8}
+a{color:#1684d8;text-decoration:none;font-weight:bold}
+main{max-width:1000px;margin:35px auto;padding:0 18px}
+h1{font-size:29px}
+.muted{color:#71879c}
+.layout{display:grid;grid-template-columns:1.4fr 1fr;gap:20px}
+.card{background:white;border:1px solid #dcecf9;border-radius:16px;padding:22px;box-shadow:0 5px 18px #1684d80d}
+label{display:block;font-size:13px;font-weight:bold;margin:15px 0 7px}
+input,textarea,select{width:100%;padding:13px;border:1px solid #cce1f2;border-radius:9px;font:inherit;background:#fbfdff;color:#17324d}
+textarea{min-height:90px;resize:vertical}
+input:focus,textarea:focus,select:focus{outline:2px solid #9bd3ff}
+.method{padding:13px;background:#f0f8ff;border:1px solid #dcecf9;border-radius:10px;margin:12px 0}
+.method label{display:flex;align-items:center;gap:10px;margin:0;cursor:pointer}
+.method input{width:auto}
+.summary-row{display:flex;justify-content:space-between;gap:12px;margin:15px 0}
+.total{font-size:23px;color:#087bc9;font-weight:900}
+.btn{width:100%;padding:15px;border:0;border-radius:10px;background:#1684d8;color:white;font-size:16px;font-weight:bold;cursor:pointer;margin-top:18px}
+.btn:disabled{opacity:.6;cursor:not-allowed}
+#message{color:#087bc9;margin-top:15px}
+@media(max-width:700px){.layout{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">SavCel Hub</div>
+  <a href="/cart">Back to Cart</a>
+</header>
+
+<main>
+<h1>Secure Checkout</h1>
+<p class="muted">Enter your delivery details and review your order.</p>
+
+<div class="layout">
+<section class="card">
+<h2>Delivery Information</h2>
+
+<form id="checkoutForm">
+<label for="fullName">Full Name</label>
+<input id="fullName" name="fullName" maxlength="150" required>
+
+<label for="phone">Phone Number</label>
+<input id="phone" name="phone" type="tel" maxlength="30" required placeholder="e.g. 0241234567">
+
+<label for="address">Delivery Address</label>
+<textarea id="address" name="address" maxlength="1000" required placeholder="House number, street, area and city"></textarea>
+
+<label for="region">Region</label>
+<select id="region" name="region" required>
+<option value="">Select your region</option>
+<option>Ashanti</option>
+<option>Greater Accra</option>
+<option>Central</option>
+<option>Eastern</option>
+<option>Western</option>
+<option>Western North</option>
+<option>Volta</option>
+<option>Oti</option>
+<option>Northern</option>
+<option>Savannah</option>
+<option>North East</option>
+<option>Upper East</option>
+<option>Upper West</option>
+<option>Bono</option>
+<option>Bono East</option>
+<option>Ahafo</option>
+</select>
+
+<h2>Payment Method</h2>
+<div class="method">
+<label><input type="radio" name="paymentMethod" value="mobile_money" checked> Mobile Money</label>
+</div>
+<div class="method">
+<label><input type="radio" name="paymentMethod" value="card"> Visa / Mastercard</label>
+</div>
+
+<p class="muted">Payments will be processed securely through Paystack.</p>
+
+<button class="btn" id="payButton" type="submit">Continue to Payment</button>
+<p id="message" aria-live="polite"></p>
+</form>
+</section>
+
+<section class="card">
+<h2>Order Summary</h2>
+<div id="items">
+<p class="muted">Loading your order...</p>
+</div>
+<hr style="border:0;border-top:1px solid #dcecf9">
+<div class="summary-row">
+<span>Subtotal</span>
+<strong id="subtotal">GH₵0.00</strong>
+</div>
+<div class="summary-row">
+<span>Delivery</span>
+<strong>Confirmed separately</strong>
+</div>
+<div class="summary-row">
+<strong>Total</strong>
+<span class="total" id="total">GH₵0.00</span>
+</div>
+</section>
+</div>
+</main>
+
+<script>
+let cartTotal=0;
+let cartLoaded=false;
+
+const money=value=>"GH₵"+Number(value).toFixed(2);
+
+async function loadCheckout(){
+  try{
+    const response=await fetch("/api/cart",{
+      credentials:"same-origin",
+      cache:"no-store"
+    });
+
+    if(response.status===401){
+      window.location.replace("/auth");
+      return;
+    }
+
+    const data=await response.json();
+
+    if(!response.ok||!data.success)throw new Error("Cart unavailable.");
+
+    const items=data.items||[];
+
+    if(!items.length){
+      document.getElementById("items").textContent="Your cart is empty.";
+      document.getElementById("payButton").disabled=true;
+      return;
+    }
+
+    const holder=document.getElementById("items");
+    holder.innerHTML="";
+
+    items.forEach(item=>{
+      const row=document.createElement("div");
+      row.className="summary-row";
+
+      const name=document.createElement("span");
+      name.textContent=item.name+" × "+item.quantity;
+
+      const price=document.createElement("strong");
+      price.textContent=money(Number(item.price)*Number(item.quantity));
+
+      row.append(name,price);
+      holder.appendChild(row);
+    });
+
+    cartTotal=items.reduce(
+      (sum,item)=>sum+Number(item.price)*Number(item.quantity),0
+    );
+
+    document.getElementById("subtotal").textContent=money(cartTotal);
+    document.getElementById("total").textContent=money(cartTotal);
+    cartLoaded=true;
+
+  }catch(error){
+    document.getElementById("items").textContent=
+      "Unable to load your cart. Please return to your cart.";
+    document.getElementById("payButton").disabled=true;
+  }
+}
+
+async function loadCustomer(){
+  try{
+    const response=await fetch("/api/auth/me",{
+      credentials:"same-origin",
+      cache:"no-store"
+    });
+
+    if(!response.ok)return;
+
+    const data=await response.json();
+
+    if(data.success&&data.user){
+      document.getElementById("fullName").value=
+        data.user.full_name||"";
+      document.getElementById("phone").value=
+        data.user.phone||"";
+    }
+  }catch(error){
+    console.error("Customer details unavailable.");
+  }
+}
+
+document.getElementById("checkoutForm").addEventListener("submit",async event=>{
+  event.preventDefault();
+
+  const message=document.getElementById("message");
+  const button=document.getElementById("payButton");
+
+  if(!cartLoaded||cartTotal<=0){
+    message.textContent="Your cart is empty or unavailable.";
+    return;
+  }
+
+  const delivery={
+    full_name:document.getElementById("fullName").value.trim(),
+    phone:document.getElementById("phone").value.trim(),
+    address:document.getElementById("address").value.trim(),
+    region:document.getElementById("region").value
+  };
+
+  const paymentMethod=document.querySelector(
+    'input[name="paymentMethod"]:checked'
+  ).value;
+
+  if(!delivery.full_name||!delivery.phone||
+     !delivery.address||!delivery.region){
+    message.textContent="Please complete all delivery details.";
+    return;
+  }
+
+  button.disabled=true;
+  button.textContent="Preparing checkout...";
+  message.textContent="";
+
+  try{
+    const response=await fetch("/api/checkout",{
+      method:"POST",
+      credentials:"same-origin",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({
+        delivery,
+        payment_method:paymentMethod
+      })
+    });
+
+    const result=await response.json();
+
+    if(!response.ok||!result.success){
+      throw new Error(result.message||"Checkout could not be started.");
+    }
+
+    if(!result.authorization_url){
+      throw new Error("Payment link was not returned. Please contact support.");
+    }
+
+    window.location.href=result.authorization_url;
+
+  }catch(error){
+    message.textContent=error.message;
+    button.disabled=false;
+    button.textContent="Continue to Payment";
+  }
+});
+
+loadCheckout();
+loadCustomer();
+</script>
+</body>
+</html>
