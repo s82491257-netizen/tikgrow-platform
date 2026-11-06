@@ -1,0 +1,147 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#08080d">
+<title>TIKGROW | TikTok Growth Platform</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#08080d;color:white;font-family:Arial,sans-serif}
+header{padding:20px 7%;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #252530}
+.logo{font-size:27px;font-weight:900;color:#25f4ee}
+.logo span{color:#fe2c55}
+nav a{color:white;text-decoration:none;margin-left:18px;font-size:14px}
+.hero{text-align:center;padding:85px 20px 65px;background:radial-gradient(ellipse at top,#18202d,#08080d 70%)}
+.tag{color:#25f4ee;font-size:13px;letter-spacing:3px}
+h1{font-size:clamp(38px,7vw,65px);margin:20px 0}
+h1 span{color:#25f4ee}
+.hero p{color:#aaa;max-width:600px;margin:auto;line-height:1.7}
+.btn{display:inline-block;padding:15px 23px;background:#fe2c55;color:white;border-radius:8px;text-decoration:none;font-weight:bold;margin:25px 7px}
+.btn.alt{background:#25f4ee;color:#08080d}
+section{padding:55px 7%}
+.heading{text-align:center;font-size:30px;margin-bottom:30px}
+.heading span{color:#25f4ee}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px}
+.card{background:#14141d;padding:25px;border:1px solid #292936;border-radius:14px}
+.card h3{margin:12px 0}
+.card p{color:#aaa;line-height:1.6;font-size:14px}
+.icon{font-size:30px}
+.card a{color:#25f4ee;display:inline-block;margin-top:15px;text-decoration:none}
+.tool{max-width:600px;margin:auto;background:#14141d;padding:25px;border-radius:14px}
+input{width:100%;padding:15px;margin:12px 0;background:#090910;border:1px solid #444;color:white;border-radius:8px}
+button{background:#25f4ee;color:#08080d;padding:14px;border:0;border-radius:8px;font-weight:bold;cursor:pointer}
+.tool button{width:100%}
+.result{margin-top:15px;color:#25f4ee;line-height:1.7}
+.price{font-size:27px;color:#25f4ee;margin:15px 0}
+footer{text-align:center;padding:30px;color:#888;border-top:1px solid #292936}
+@media(max-width:600px){nav a{margin-left:8px;font-size:12px}header{padding:17px 4%}.hero{padding-top:65px}}
+</style>
+</head>
+<body>
+<header>
+<div class="logo">TIK<span>GROW</span></div>
+<nav>
+<a href="#tools">Free Tools</a>
+<a href="#services">Services</a>
+</nav>
+</header>
+
+<div class="hero">
+<div class="tag">YOUR TIKTOK GROWTH STARTS HERE</div>
+<h1>Grow Your TikTok.<br><span>Build Your Future.</span></h1>
+<p>Discover useful free growth tools, improve your content strategy and explore professional TikTok promotion services.</p>
+<a class="btn" href="#services">Explore Services</a>
+<a class="btn alt" href="#tools">Free Tools</a>
+</div>
+
+<section id="tools">
+<h2 class="heading">Free <span>Growth Tools</span></h2>
+<div class="cards">
+<div class="card"><div class="icon">🔍</div><h3>Profile Analyzer</h3><p>Review your TikTok profile and get practical suggestions to improve it.</p><a href="#analyzer">Try tool →</a></div>
+<div class="card"><div class="icon">#️⃣</div><h3>Hashtag Ideas</h3><p>Generate relevant hashtag ideas for your next video.</p><a href="#hashtags">Try tool →</a></div>
+<div class="card"><div class="icon">💡</div><h3>Video Ideas</h3><p>Find content ideas for your TikTok niche.</p><a href="#ideas">Try tool →</a></div>
+<div class="card"><div class="icon">📈</div><h3>Growth Tips</h3><p>Learn how to improve your content and audience engagement.</p><a href="#tips">Explore →</a></div>
+</div>
+</section>
+
+<section id="analyzer">
+<h2 class="heading">Profile <span>Analyzer</span></h2>
+<div class="tool">
+<p>Enter your TikTok username for a profile improvement checklist.</p>
+<input id="username" placeholder="Your TikTok username">
+<button onclick="analyze()">Analyze Profile</button>
+<div class="result" id="analysis"></div>
+</div>
+</section>
+
+<section id="hashtags">
+<h2 class="heading">Hashtag <span>Generator</span></h2>
+<div class="tool">
+<input id="topic" placeholder="Enter your video topic">
+<button onclick="hashtags()">Generate Hashtags</button>
+<div class="result" id="hashresult"></div>
+</div>
+</section>
+
+<section id="ideas">
+<h2 class="heading">Video <span>Idea Generator</span></h2>
+<div class="tool">
+<input id="niche" placeholder="Enter your niche e.g. comedy">
+<button onclick="ideas()">Generate Ideas</button>
+<div class="result" id="idearesult"></div>
+</div>
+</section>
+
+<section id="services">
+<h2 class="heading">Promotion <span>Services</span></h2>
+<div class="cards">
+<div class="card"><div class="icon">🎬</div><h3>Content Strategy</h3><p>Get help planning engaging TikTok content.</p><div class="price">Contact us</div><a href="#contact">Request service →</a></div>
+<div class="card"><div class="icon">📣</div><h3>Video Promotion</h3><p>Explore legitimate promotional campaigns to reach potential viewers.</p><div class="price">Contact us</div><a href="#contact">Request service →</a></div>
+<div class="card"><div class="icon">📊</div><h3>Account Audit</h3><p>Get feedback on your profile, content and growth strategy.</p><div class="price">Contact us</div><a href="#contact">Request service →</a></div>
+</div>
+</section>
+
+<section id="tips">
+<h2 class="heading">Grow <span>Smarter</span></h2>
+<div class="cards">
+<div class="card"><h3>Post consistently</h3><p>Build a realistic posting schedule you can maintain.</p></div>
+<div class="card"><h3>Use strong hooks</h3><p>Make the first seconds of your video interesting.</p></div>
+<div class="card"><h3>Study analytics</h3><p>Learn which videos keep viewers watching.</p></div>
+</div>
+</section>
+
+<section id="contact">
+<h2 class="heading">Contact <span>TIKGROW</span></h2>
+<div class="tool">
+<p>Interested in a promotion service? Contact our team.</p>
+<a class="btn" href="mailto:YOUR_EMAIL@example.com">Email TIKGROW</a>
+</div>
+</section>
+
+<footer>© 2026 TIKGROW. Grow smarter. Create better.</footer>
+
+<script>
+function analyze(){
+let u=document.getElementById('username').value.trim();
+if(!u){alert('Enter your TikTok username');return}
+document.getElementById('analysis').innerHTML=
+'Profile improvement checklist for @'+u+':<br>✓ Use a clear profile picture.<br>✓ Write a clear bio.<br>✓ Choose a consistent content niche.<br>✓ Use engaging video covers.<br>✓ Review your video analytics.<br><small>This is a general checklist, not a live account analysis.</small>';
+}
+function hashtags(){
+let t=document.getElementById('topic').value.trim();
+if(!t){alert('Enter your video topic');return}
+let clean=t.replace(/[^a-zA-Z0-9 ]/g,'').trim().split(/\s+/).join('');
+document.getElementById('hashresult').innerText=
+'#'+clean+' #TikTok #ForYou #ContentCreator #Trending #GhanaTikTok';
+}
+function ideas(){
+let n=document.getElementById('niche').value.trim();
+if(!n){alert('Enter your niche');return}
+document.getElementById('idearesult').innerHTML=
+'Video ideas for '+n+':<br>1. Three things people misunderstand about '+n+'.<br>2. A day in your life.<br>3. Beginner tips for '+n+'.<br>4. Common mistakes in '+n+'.<br>5. Answer a popular question about '+n+'.';
+}
+</script>
+</body>
+</html>
