@@ -13,12 +13,14 @@ const authRoutes = require("./routes/auth");
 const productsRoutes = require("./routes/products");
 const cartRoutes = require("./routes/cart");
 const checkoutRoutes = require("./routes/checkout");
+const adminRoutes = require("./routes/admin");
 
 const requireAuth = require("./middleware/auth");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// SECURITY
 app.disable("x-powered-by");
 app.set("trust proxy", 1);
 
@@ -74,6 +76,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/products", productsRoutes);
 app.use("/api/cart", cartRoutes);
 app.use("/api/checkout", checkoutRoutes);
+app.use("/api/admin", adminRoutes);
 
 // LOGIN PAGE
 app.get("/auth", (req, res) => {
@@ -126,21 +129,53 @@ app.get("/settings", requireAuth, (req, res) => {
   );
 
   if (!fs.existsSync(settingsFile)) {
-    return res.status(404).send("Settings page is not ready yet.");
+    return res.status(404).send(
+      "Settings page is not ready yet."
+    );
   }
 
   res.sendFile(settingsFile);
 });
 
-// CUSTOMER HOMEPAGE
-app.get("/", requireAuth, (req, res) => {
-  const homepage = path.join(__dirname, "index.html");
+// ADMIN DASHBOARD PAGE
+app.get("/admin", requireAuth, async (req, res) => {
+  try {
+    const result = await require("./db").pool.query(
+      `SELECT role FROM users
+       WHERE id = $1 AND is_active = TRUE`,
+      [req.user.id]
+    );
 
-  if (!fs.existsSync(homepage)) {
-    return res.status(404).send("Homepage not found.");
+    if (
+      !result.rows.length ||
+      result.rows[0].role !== "admin"
+    ) {
+      return res.status(403).send(
+        "Administrator access required."
+      );
+    }
+
+    const adminFile = path.join(
+      __dirname,
+      "public",
+      "admin.html"
+    );
+
+    if (!fs.existsSync(adminFile)) {
+      return res.status(404).send(
+        "Admin dashboard page is not ready yet."
+      );
+    }
+
+    res.sendFile(adminFile);
+
+  } catch (error) {
+    console.error("Admin page error:", error.message);
+
+    res.status(500).send(
+      "Unable to load admin dashboard."
+    );
   }
-
-  res.sendFile(homepage);
 });
 
 // CUSTOMER ACCOUNT API
@@ -192,5 +227,7 @@ app.use((err, req, res, next) => {
 
 // START SERVER
 app.listen(PORT, "0.0.0.0", () => {
-  console.log("SavCel Hub running on port " + PORT);
+  console.log(
+    "SavCel Hub running on port " + PORT
+  );
 });
