@@ -4,30 +4,48 @@ const { Pool } = require("pg");
 const path = require("path");
 const crypto = require("crypto");
 const { promisify } = require("util");
-const multer = require("multer");
-const cloudinary = require("cloudinary").v2;
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 const scrypt = promisify(crypto.scrypt);
 
-const REQUIRED = [
+// REQUIRED ENVIRONMENT VARIABLES
+const required = [
   "DATABASE_URL",
   "ADMIN_SETUP_TOKEN",
-  "PAYSTACK_SECRET_KEY",
-  "CLOUDINARY_CLOUD_NAME",
-  "CLOUDINARY_API_KEY",
-  "CLOUDINARY_API_SECRET",
-  "SESSION_SECRET"
+  "PAYSTACK_SECRET_KEY"
 ];
 
-for (const key of REQUIRED) {
+for (const key of required) {
   if (!process.env[key]) {
     console.error("Missing environment variable:", key);
     process.exit(1);
   }
 }
 
+// TIKGROW CUSTOMER PRICES PER 1,000
+const PRICES = {
+  "TikTok Likes": 25,
+  "Comments": 250,
+  "Followers": 100,
+  "Video Views": 10,
+  "Saves": 35,
+  "LIVE Promotion": 150
+};
+
+// MINIMUM ORDER QUANTITIES
+const MINIMUMS = {
+  "TikTok Likes": 10,
+  "Comments": 4000,
+  "Followers": 10,
+  "Video Views": 100,
+  "Saves": 100,
+  "LIVE Promotion": 50
+};
+
+const SERVICES = Object.keys(PRICES);
+
+// DATABASE
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: process.env.DATABASE_URL.includes("localhost")
@@ -35,811 +53,1123 @@ const pool = new Pool({
     : { rejectUnauthorized: false }
 });
 
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET
-});
-
-const upload = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 5 * 1024 * 1024 },
-  fileFilter: (req, file, cb) => {
-    if (!file.mimetype.startsWith("image/")) {
-      return cb(new Error("Only image files are allowed"));
-    }
-    cb(null, true);
+// MIDDLEWARE
+app.use(express.json({
+  verify: (req, res, buffer) => {
+    req.rawBody = Buffer.from(buffer);
   }
-});
+}));
 
-function makeToken(user) {
-  const payload = Buffer.from(JSON.stringify({
-    id: user.id,
-    email: user.email,
-    expires: Date.now() + 7 * 24 * 60 * 60 * 1000
-  })).toString("base64url");
+app.use(express.urlencoded({ extended: true }));
 
-  const signature = crypto
-    .createHmac("sha256", process.env.SESSION_SECRET)
-    .update(payload)
-    .digest("base64url");
+app.use(express.static(path.join(__dirname, "public")));
 
-  return payload + "." + signature;
+// PRICE CALCULATION
+function calculatePrice(service, quantity) {
+  if (
+    !Number.isSafeInteger(quantity) ||
+    quantity < 1 ||
+    quantity > 1000000
+  ) {
+    throw new Error(
+      "Quantity must be between 1 and 1,000,000."
+    );
+  }
+
+  if (!Object.prototype.hasOwnProperty.call(PRICES, service)) {
+    throw new Error("Please select a valid service.");
+  }
+
+  const minimum = MINIMUMS[service] || 1;
+
+  if (quantity < minimum) {
+    throw new Error(
+      service + " minimum order is " +
+      minimum.toLocaleString() + "."
+    );
+  }
+
+  return Math.round(
+    PRICES[service] * quantity / 1000 * 100
+  ) / 100;
 }
 
-function readToken(token) {
-  try {
-    const parts = token.split(".");
-    if (parts.length !== 2) return null;
+// PHONE NUMBER
+function normalizePhone(value) {
+  let phone = String(value || "").replace(/[\s()-]/g, "");
 
-    const expected = crypto
-      .createHmac("sha256", process.env.SESSION_SECRET)
-      .update(parts[0])
-      .digest();
+  if (/^0\d{9}$/.test(phone)) {
+    phone = "+233" + phone.slice(1);
+  } else if (/^233\d{9}$/.test(phone)) {
+    phone = "+" + phone;
+  }
 
-    const received = Buffer.from(parts[1], "base64url");
-
-    if (
-      received.length !== expected.length ||
-      !crypto.timingSafeEqual(received, expected)
-    ) return null;
-
-    const data = JSON.parse(
-      Buffer.from(parts[0], "base64url").toString()
+  if (!/^\+[1-9]\d{7,14}$/.test(phone)) {
+    throw new Error(
+      "Enter a valid phone number, including country code."
     );
+  }
 
-    if (data.expires < Date.now()) return null;
-    return data;
+  return phone;
+}
+
+// ORDER CODE
+function makeOrderCode() {
+  return "TG-" +
+    crypto.randomBytes(5).toString("hex").toUpperCase();
+}
+
+// VALIDATE TIKTOK LINK
+function validTikTokLink(value) {
+  try {
+    const url = new URL(value);
+
+    return url.protocol === "https:" &&
+      [
+        "tiktok.com",
+        "www.tiktok.com",
+        "m.tiktok.com",
+        "vm.tiktok.com",
+        "vt.tiktok.com"
+      ].includes(url.hostname);
   } catch {
+    return false;
+  }
+}
+
+// COOKIE HELPERS
+function getCookie(req, name) {
+  const cookies = String(
+    req.headers.cookie || ""
+  ).split(";");
+
+  for (const cookie of cookies) {
+    const index = cookie.indexOf("=");
+
+    if (index < 0) continue;
+
+    if (cookie.slice(0, index).trim() === name) {
+      return decodeURIComponent(
+        cookie.slice(index + 1).trim()
+      );
+    }
+  }
+
+  return null;
+}
+
+function setSessionCookie(res, token) {
+  res.setHeader(
+    "Set-Cookie",
+    "tg_session=" + encodeURIComponent(token) +
+    "; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=2592000"
+  );
+}
+
+function clearSessionCookie(res) {
+  res.setHeader(
+    "Set-Cookie",
+    "tg_session=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0"
+  );
+}
+
+// CREATE CUSTOMER SESSION
+async function createCustomerSession(userId, res) {
+  const token = crypto.randomBytes(32).toString("hex");
+
+  const tokenHash = crypto
+    .createHash("sha256")
+    .update(token)
+    .digest("hex");
+
+  await pool.query(
+    `INSERT INTO customer_sessions
+     (token_hash, user_id, expires_at)
+     VALUES ($1, $2, NOW() + INTERVAL '30 days')`,
+    [tokenHash, userId]
+  );
+
+  setSessionCookie(res, token);
+}
+
+// GET LOGGED-IN CUSTOMER
+async function getCustomer(req) {
+  const token = getCookie(req, "tg_session");
+
+  if (!token || !/^[a-f0-9]{64}$/i.test(token)) {
     return null;
   }
+
+  const tokenHash = crypto
+    .createHash("sha256")
+    .update(token)
+    .digest("hex");
+
+  const result = await pool.query(
+    `SELECT u.id, u.phone
+     FROM customer_sessions s
+     JOIN customer_users u ON u.id = s.user_id
+     WHERE s.token_hash = $1
+       AND s.expires_at > NOW()
+     LIMIT 1`,
+    [tokenHash]
+  );
+
+  return result.rows[0] || null;
 }
 
-function customerAuth(req, res, next) {
-  const header = req.headers.authorization || "";
-  const token = header.startsWith("Bearer ")
-    ? header.slice(7)
-    : "";
-
-  const user = readToken(token);
-
-  if (!user) {
-    return res.status(401).json({ error: "Please log in first" });
-  }
-
-  req.user = user;
-  next();
-}
-
-function adminAuth(req, res, next) {
-  const supplied = req.headers["x-admin-token"] || "";
-  const expected = process.env.ADMIN_SETUP_TOKEN;
-
-  const a = Buffer.from(String(supplied));
-  const b = Buffer.from(String(expected));
+// ADMIN AUTHENTICATION
+async function adminOnly(req, res, next) {
+  const token = req.headers["x-admin-token"];
 
   if (
-    a.length !== b.length ||
-    !crypto.timingSafeEqual(a, b)
+    !token ||
+    token !== process.env.ADMIN_SETUP_TOKEN
   ) {
-    return res.status(401).json({ error: "Admin access denied" });
+    return res.status(401).json({
+      error: "Unauthorized admin access."
+    });
   }
 
   next();
 }
 
-async function hashPassword(password) {
-  const salt = crypto.randomBytes(16).toString("hex");
-  const hash = await scrypt(password, salt, 64);
-  return salt + ":" + hash.toString("hex");
-}
+// SMM AFRICA API CONNECTION
+async function smmRequest(action) {
+  const apiUrl =
+    process.env.SMM_API_URL ||
+    "https://smm.africa/api/v3";
 
-async function checkPassword(password, stored) {
-  const parts = stored.split(":");
-  if (parts.length !== 2) return false;
+  const apiKey = process.env.SMM_API_KEY;
 
-  const hash = await scrypt(password, parts[0], 64);
-  const original = Buffer.from(parts[1], "hex");
-
-  return original.length === hash.length &&
-    crypto.timingSafeEqual(original, hash);
-}
-
-function uploadToCloudinary(buffer) {
-  return new Promise((resolve, reject) => {
-    const stream = cloudinary.uploader.upload_stream(
-      { folder: "tikgrow-products" },
-      (error, result) => {
-        if (error) return reject(error);
-        resolve(result);
-      }
+  if (!apiKey) {
+    throw new Error(
+      "SMM_API_KEY is not configured in Render."
     );
+  }
 
-    stream.end(buffer);
+  const url = new URL(apiUrl);
+
+  if (
+    url.protocol !== "https:" ||
+    url.hostname !== "smm.africa"
+  ) {
+    throw new Error(
+      "Invalid SMM API URL configuration."
+    );
+  }
+
+  const response = await fetch(url.toString(), {
+    method: "POST",
+    headers: {
+      "Authorization": "Bearer " + apiKey,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ action }),
+    signal: AbortSignal.timeout(20000)
   });
+
+  const data = await response.json();
+
+  if (!response.ok || data.error) {
+    console.error("SMM provider error:", {
+      status: response.status,
+      code: data.code || "UNKNOWN",
+      request_id: data.request_id || null
+    });
+
+    throw new Error(
+      "Provider connection failed. Check the API credentials and provider account."
+    );
+  }
+
+  return data;
 }
 
+// DATABASE SETUP
 async function initializeDatabase() {
   await pool.query(`
-    CREATE TABLE IF NOT EXISTS store_users (
+    CREATE TABLE IF NOT EXISTS orders (
       id SERIAL PRIMARY KEY,
-      name TEXT NOT NULL,
-      email TEXT UNIQUE NOT NULL,
-      password_hash TEXT NOT NULL,
-      created_at TIMESTAMPTZ DEFAULT NOW()
-    );
-
-    CREATE TABLE IF NOT EXISTS store_products (
-      id SERIAL PRIMARY KEY,
-      name TEXT NOT NULL,
-      description TEXT DEFAULT '',
-      category TEXT DEFAULT 'Other',
-      price NUMERIC(12,2) NOT NULL CHECK (price >= 0),
-      stock INTEGER NOT NULL DEFAULT 0 CHECK (stock >= 0),
-      image_url TEXT DEFAULT '',
-      active BOOLEAN DEFAULT TRUE,
-      created_at TIMESTAMPTZ DEFAULT NOW()
-    );
-
-    CREATE TABLE IF NOT EXISTS store_orders (
-      id SERIAL PRIMARY KEY,
-      user_id INTEGER REFERENCES store_users(id),
-      reference TEXT UNIQUE NOT NULL,
-      total_amount NUMERIC(12,2) NOT NULL,
-      currency TEXT DEFAULT 'GHS',
-      phone TEXT NOT NULL,
-      delivery_address TEXT NOT NULL,
-      payment_status TEXT DEFAULT 'Pending',
-      order_status TEXT DEFAULT 'Awaiting Payment',
-      created_at TIMESTAMPTZ DEFAULT NOW()
-    );
-
-    CREATE TABLE IF NOT EXISTS store_order_items (
-      id SERIAL PRIMARY KEY,
-      order_id INTEGER REFERENCES store_orders(id),
-      product_id INTEGER REFERENCES store_products(id),
-      product_name TEXT NOT NULL,
-      quantity INTEGER NOT NULL,
-      unit_price NUMERIC(12,2) NOT NULL
-    );
+      order_code TEXT UNIQUE NOT NULL,
+      customer_name TEXT NOT NULL DEFAULT 'Customer',
+      contact TEXT NOT NULL,
+      service TEXT NOT NULL,
+      tiktok_link TEXT NOT NULL,
+      details TEXT,
+      status TEXT NOT NULL DEFAULT 'New',
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
   `);
 
-  console.log("TIKGROW database ready");
+  await pool.query(`
+    ALTER TABLE orders
+    ADD COLUMN IF NOT EXISTS price_ghs NUMERIC(12,2) DEFAULT 0
+  `);
+
+  await pool.query(`
+    ALTER TABLE orders
+    ADD COLUMN IF NOT EXISTS payment_reference TEXT
+  `);
+
+  await pool.query(`
+    ALTER TABLE orders
+    ADD COLUMN IF NOT EXISTS paid_at TIMESTAMPTZ
+  `);
+
+  await pool.query(`
+    ALTER TABLE orders
+    ADD COLUMN IF NOT EXISTS quantity INTEGER DEFAULT 1000
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS customer_users (
+      id SERIAL PRIMARY KEY,
+      phone TEXT UNIQUE NOT NULL,
+      password_hash TEXT NOT NULL,
+      password_salt TEXT NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS customer_sessions (
+      id SERIAL PRIMARY KEY,
+      token_hash TEXT UNIQUE NOT NULL,
+      user_id INTEGER NOT NULL
+        REFERENCES customer_users(id) ON DELETE CASCADE,
+      expires_at TIMESTAMPTZ NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+
+  await pool.query(`
+    ALTER TABLE orders
+    ADD COLUMN IF NOT EXISTS user_id INTEGER
+    REFERENCES customer_users(id) ON DELETE SET NULL
+  `);
+
+  await pool.query(`
+    CREATE UNIQUE INDEX IF NOT EXISTS
+    orders_payment_reference_unique
+    ON orders(payment_reference)
+    WHERE payment_reference IS NOT NULL
+  `);
+
+  await pool.query(`
+    CREATE INDEX IF NOT EXISTS orders_user_id_idx
+    ON orders(user_id)
+  `);
+
+  await pool.query(`
+    DELETE FROM customer_sessions
+    WHERE expires_at < NOW()
+  `);
+
+  console.log("TIKGROW database ready.");
 }
 
-// Health check
-app.get("/api/health", async (req, res) => {
-  try {
-    await pool.query("SELECT 1");
-    res.json({ ok: true, message: "TIKGROW store server is running" });
-  } catch {
-    res.status(500).json({ ok: false, error: "Database connection failed" });
-  }
-});
-
-// Customer registration
+// CUSTOMER REGISTRATION
 app.post("/api/auth/register", async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const phone = normalizePhone(req.body.phone);
+    const password = String(req.body.password || "");
 
-    if (!name || !email || !password || password.length < 8) {
+    if (
+      password.length < 8 ||
+      password.length > 128
+    ) {
       return res.status(400).json({
-        error: "Enter your name, email and a password of at least 8 characters"
+        error: "Password must be at least 8 characters."
       });
     }
 
-    const cleanEmail = String(email).trim().toLowerCase();
-    const passwordHash = await hashPassword(password);
-
-    const result = await pool.query(
-      `INSERT INTO store_users (name, email, password_hash)
-       VALUES ($1, $2, $3)
-       RETURNING id, name, email`,
-      [String(name).trim(), cleanEmail, passwordHash]
+    const existing = await pool.query(
+      "SELECT id FROM customer_users WHERE phone = $1",
+      [phone]
     );
 
-    const user = result.rows[0];
+    if (existing.rows.length) {
+      return res.status(409).json({
+        error: "An account already exists. Please log in."
+      });
+    }
+
+    const salt = crypto.randomBytes(16).toString("hex");
+
+    const hash = await scrypt(password, salt, 64);
+
+    const saved = await pool.query(
+      `INSERT INTO customer_users
+       (phone, password_hash, password_salt)
+       VALUES ($1, $2, $3)
+       RETURNING id, phone`,
+      [phone, hash.toString("hex"), salt]
+    );
+
+    const user = saved.rows[0];
+
+    await createCustomerSession(user.id, res);
 
     res.status(201).json({
-      message: "Account created",
-      user,
-      token: makeToken(user)
+      success: true,
+      message: "Your TIKGROW account has been created.",
+      user
     });
-  } catch (error) {
-    if (error.code === "23505") {
-      return res.status(409).json({ error: "Email already registered" });
-    }
 
-    console.error("Registration error:", error);
-    res.status(500).json({ error: "Could not create account" });
+  } catch (error) {
+    console.error("Registration error:", error.message);
+
+    res.status(400).json({
+      error: error.message || "Registration failed."
+    });
   }
 });
 
-// Customer login
+// CUSTOMER LOGIN
 app.post("/api/auth/login", async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const phone = normalizePhone(req.body.phone);
+    const password = String(req.body.password || "");
 
-    if (!email || !password) {
-      return res.status(400).json({ error: "Enter email and password" });
+    if (!password || password.length > 128) {
+      return res.status(401).json({
+        error: "Invalid phone number or password."
+      });
     }
 
     const result = await pool.query(
-      `SELECT id, name, email, password_hash
-       FROM store_users WHERE email = $1`,
-      [String(email).trim().toLowerCase()]
+      `SELECT id, phone, password_hash, password_salt
+       FROM customer_users
+       WHERE phone = $1`,
+      [phone]
     );
+
+    if (!result.rows.length) {
+      return res.status(401).json({
+        error: "Invalid phone number or password."
+      });
+    }
 
     const user = result.rows[0];
 
-    if (!user || !(await checkPassword(password, user.password_hash))) {
-      return res.status(401).json({ error: "Incorrect email or password" });
+    const hash = await scrypt(
+      password,
+      user.password_salt,
+      64
+    );
+
+    const expected = Buffer.from(
+      user.password_hash,
+      "hex"
+    );
+
+    if (
+      hash.length !== expected.length ||
+      !crypto.timingSafeEqual(hash, expected)
+    ) {
+      return res.status(401).json({
+        error: "Invalid phone number or password."
+      });
     }
+
+    await createCustomerSession(user.id, res);
 
     res.json({
-      message: "Login successful",
-      user: { id: user.id, name: user.name, email: user.email },
-      token: makeToken(user)
-    });
-  } catch (error) {
-    console.error("Login error:", error);
-    res.status(500).json({ error: "Login failed" });
-  }
-});
-
-// Public product list
-app.get("/api/products", async (req, res) => {
-  try {
-    const result = await pool.query(
-      `SELECT id, name, description, category, price, stock, image_url, active
-       FROM store_products
-       WHERE active = TRUE
-       ORDER BY created_at DESC`
-    );
-
-    res.json(result.rows);
-  } catch (error) {
-    console.error("Products error:", error);
-    res.status(500).json({ error: "Could not load products" });
-  }
-});
-
-// Single product
-app.get("/api/products/:id", async (req, res) => {
-  try {
-    const result = await pool.query(
-      `SELECT id, name, description, category, price, stock, image_url
-       FROM store_products
-       WHERE id = $1 AND active = TRUE`,
-      [req.params.id]
-    );
-
-    if (!result.rows.length) {
-      return res.status(404).json({ error: "Product not found" });
-    }
-
-    res.json(result.rows[0]);
-  } catch (error) {
-    res.status(500).json({ error: "Could not load product" });
-  }
-});
-
-// Admin: upload product image
-app.post("/api/admin/upload", adminAuth, upload.single("image"), async (req, res) => {
-  try {
-    if (!req.file) {
-      return res.status(400).json({ error: "Choose an image first" });
-    }
-
-    const result = await uploadToCloudinary(req.file.buffer);
-
-    res.json({
-      image_url: result.secure_url,
-      public_id: result.public_id
-    });
-  } catch (error) {
-    console.error("Image upload error:", error);
-    res.status(500).json({ error: "Image upload failed" });
-  }
-});
-
-// Admin: list products
-app.get("/api/admin/products", adminAuth, async (req, res) => {
-  try {
-    const result = await pool.query(
-      "SELECT * FROM store_products ORDER BY created_at DESC"
-    );
-    res.json(result.rows);
-  } catch (error) {
-    res.status(500).json({ error: "Could not load admin products" });
-  }
-});
-
-// Admin: add product
-app.post("/api/admin/products", adminAuth, async (req, res) => {
-  try {
-    const { name, description, category, price, stock, image_url } = req.body;
-
-    if (!name || !Number.isFinite(Number(price)) ||
-        Number(price) < 0 || !Number.isInteger(Number(stock)) ||
-        Number(stock) < 0) {
-      return res.status(400).json({ error: "Check product name, price and stock" });
-    }
-
-    const result = await pool.query(
-      `INSERT INTO store_products
-       (name, description, category, price, stock, image_url)
-       VALUES ($1, $2, $3, $4, $5, $6)
-       RETURNING *`,
-      [
-        String(name).trim(),
-        description || "",
-        category || "Other",
-        Number(price),
-        Number(stock),
-        image_url || ""
-      ]
-    );
-
-    res.status(201).json(result.rows[0]);
-  } catch (error) {
-    console.error("Add product error:", error);
-    res.status(500).json({ error: "Could not add product" });
-  }
-});
-
-// Admin: edit product
-app.patch("/api/admin/products/:id", adminAuth, async (req, res) => {
-  try {
-    const allowed = [
-      "name", "description", "category",
-      "price", "stock", "image_url", "active"
-    ];
-
-    const fields = [];
-    const values = [];
-    let index = 1;
-
-    for (const key of allowed) {
-      if (Object.prototype.hasOwnProperty.call(req.body, key)) {
-        fields.push(`${key} = $${index++}`);
-        values.push(req.body[key]);
+      success: true,
+      message: "Login successful.",
+      user: {
+        id: user.id,
+        phone: user.phone
       }
-    }
+    });
 
-    if (!fields.length) {
-      return res.status(400).json({ error: "No product changes supplied" });
-    }
-
-    values.push(req.params.id);
-
-    const result = await pool.query(
-      `UPDATE store_products SET ${fields.join(", ")}
-       WHERE id = $${index} RETURNING *`,
-      values
-    );
-
-    if (!result.rows.length) {
-      return res.status(404).json({ error: "Product not found" });
-    }
-
-    res.json(result.rows[0]);
   } catch (error) {
-    console.error("Edit product error:", error);
-    res.status(500).json({ error: "Could not update product" });
+    console.error("Login error:", error.message);
+
+    res.status(400).json({
+      error: error.message || "Login failed."
+    });
   }
 });
 
-// Admin: remove product (soft delete)
-app.delete("/api/admin/products/:id", adminAuth, async (req, res) => {
+// CURRENT CUSTOMER
+app.get("/api/auth/me", async (req, res) => {
   try {
-    const result = await pool.query(
-      `UPDATE store_products SET active = FALSE
-       WHERE id = $1 RETURNING id`,
-      [req.params.id]
-    );
+    const user = await getCustomer(req);
 
-    if (!result.rows.length) {
-      return res.status(404).json({ error: "Product not found" });
+    if (!user) {
+      return res.json({
+        authenticated: false
+      });
     }
 
-    res.json({ message: "Product removed" });
+    res.json({
+      authenticated: true,
+      user
+    });
+
   } catch (error) {
-    res.status(500).json({ error: "Could not remove product" });
+    res.status(500).json({
+      error: "Could not check account."
+    });
   }
 });
 
-// Verify a payment directly with Paystack
+// CUSTOMER LOGOUT
+app.post("/api/auth/logout", async (req, res) => {
+  try {
+    const token = getCookie(req, "tg_session");
+
+    if (token) {
+      const tokenHash = crypto
+        .createHash("sha256")
+        .update(token)
+        .digest("hex");
+
+      await pool.query(
+        "DELETE FROM customer_sessions WHERE token_hash = $1",
+        [tokenHash]
+      );
+    }
+
+    clearSessionCookie(res);
+
+    res.json({
+      success: true,
+      message: "You have logged out."
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      error: "Could not log out."
+    });
+  }
+});
+
+// CUSTOMER ORDER HISTORY
+app.get("/api/customer/orders", async (req, res) => {
+  try {
+    const user = await getCustomer(req);
+
+    if (!user) {
+      return res.status(401).json({
+        error: "Please log in first."
+      });
+    }
+
+    const result = await pool.query(
+      `SELECT order_code, service, quantity, price_ghs,
+              status, paid_at, created_at
+       FROM orders
+       WHERE user_id = $1
+       ORDER BY created_at DESC
+       LIMIT 100`,
+      [user.id]
+    );
+
+    res.json(result.rows.map(order => ({
+      ...order,
+      payment_status: order.paid_at
+        ? "Paid"
+        : "Not paid"
+    })));
+
+  } catch (error) {
+    console.error("History error:", error.message);
+
+    res.status(500).json({
+      error: "Could not load order history."
+    });
+  }
+});
+
+// PAYSTACK VERIFICATION
 async function verifyPaystack(reference) {
   const response = await fetch(
-    "https://api.paystack.co/transaction/verify/" + encodeURIComponent(reference),
+    "https://api.paystack.co/transaction/verify/" +
+    encodeURIComponent(reference),
     {
       headers: {
-        Authorization: "Bearer " + process.env.PAYSTACK_SECRET_KEY
+        Authorization:
+          "Bearer " + process.env.PAYSTACK_SECRET_KEY
       }
     }
   );
 
   const data = await response.json();
 
-  if (!response.ok || !data.status || !data.data) {
-    throw new Error("Paystack could not verify this payment");
+  if (
+    !response.ok ||
+    !data.status ||
+    !data.data
+  ) {
+    throw new Error(
+      "Could not verify Paystack transaction."
+    );
   }
 
   return data.data;
 }
 
-// Mark an order paid and deduct stock once
-async function markOrderPaid(reference) {
+// CONFIRM CUSTOMER PAYMENT
+async function confirmPayment(reference) {
   const payment = await verifyPaystack(reference);
 
-  if (payment.status !== "success" || payment.currency !== "GHS") {
-    throw new Error("Payment is not successful");
+  if (
+    payment.status !== "success" ||
+    payment.currency !== "GHS"
+  ) {
+    throw new Error(
+      "Payment has not been confirmed."
+    );
   }
 
-  const client = await pool.connect();
+  const result = await pool.query(
+    `SELECT * FROM orders
+     WHERE payment_reference = $1`,
+    [reference]
+  );
 
-  try {
-    await client.query("BEGIN");
-
-    const orderResult = await client.query(
-      "SELECT * FROM store_orders WHERE reference = $1 FOR UPDATE",
-      [reference]
+  if (!result.rows.length) {
+    throw new Error(
+      "Payment order was not found."
     );
-
-    if (!orderResult.rows.length) {
-      throw new Error("Order not found");
-    }
-
-    const order = orderResult.rows[0];
-
-    if (order.payment_status === "Paid") {
-      await client.query("COMMIT");
-      return order;
-    }
-
-    const expectedAmount = Math.round(Number(order.total_amount) * 100);
-
-    if (Number(payment.amount) !== expectedAmount) {
-      throw new Error("Payment amount does not match the order");
-    }
-
-    const items = await client.query(
-      "SELECT * FROM store_order_items WHERE order_id = $1",
-      [order.id]
-    );
-
-    for (const item of items.rows) {
-      const updated = await client.query(
-        `UPDATE store_products
-         SET stock = stock - $1
-         WHERE id = $2 AND stock >= $1 AND active = TRUE
-         RETURNING id`,
-        [item.quantity, item.product_id]
-      );
-
-      if (!updated.rows.length) {
-        throw new Error("Insufficient stock for " + item.product_name);
-      }
-    }
-
-    const result = await client.query(
-      `UPDATE store_orders
-       SET payment_status = 'Paid', order_status = 'Processing'
-       WHERE id = $1 RETURNING *`,
-      [order.id]
-    );
-
-    await client.query("COMMIT");
-    return result.rows[0];
-  } catch (error) {
-    await client.query("ROLLBACK");
-    throw error;
-  } finally {
-    client.release();
   }
+
+  const order = result.rows[0];
+
+  const expectedAmount = Math.round(
+    Number(order.price_ghs) * 100
+  );
+
+  if (
+    Number(payment.amount) !== expectedAmount
+  ) {
+    throw new Error(
+      "Payment amount does not match the order."
+    );
+  }
+
+  await pool.query(
+    `UPDATE orders
+     SET status = 'Paid',
+         paid_at = COALESCE(paid_at, NOW())
+     WHERE payment_reference = $1`,
+    [reference]
+  );
+
+  return order.order_code;
 }
 
-// Paystack webhook - raw body must be handled before express.json()
-app.post("/api/paystack/webhook", express.raw({ type: "application/json" }), async (req, res) => {
+// PAYSTACK WEBHOOK
+app.post("/api/paystack/webhook", async (req, res) => {
   try {
-    const signature = req.headers["x-paystack-signature"];
+    const signature =
+      req.headers["x-paystack-signature"];
 
-    const expected = crypto
-      .createHmac("sha512", process.env.PAYSTACK_SECRET_KEY)
-      .update(req.body)
-      .digest("hex");
+    const rawBody = req.rawBody;
 
     if (
       !signature ||
-      signature.length !== expected.length ||
-      !crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected))
+      !rawBody ||
+      !/^[0-9a-f]{128}$/i.test(signature)
     ) {
       return res.sendStatus(401);
     }
 
-    const event = JSON.parse(req.body.toString());
+    const expected = crypto
+      .createHmac(
+        "sha512",
+        process.env.PAYSTACK_SECRET_KEY
+      )
+      .update(rawBody)
+      .digest();
 
-    if (event.event === "charge.success" && event.data.reference) {
-      await markOrderPaid(event.data.reference);
+    const received = Buffer.from(
+      signature,
+      "hex"
+    );
+
+    if (
+      received.length !== expected.length ||
+      !crypto.timingSafeEqual(expected, received)
+    ) {
+      return res.sendStatus(401);
     }
 
-    res.sendStatus(200);
+    const event = req.body;
+
+    if (
+      event.event === "charge.success" &&
+      event.data?.reference
+    ) {
+      await confirmPayment(
+        event.data.reference
+      );
+    }
+
+    return res.sendStatus(200);
+
   } catch (error) {
-    console.error("Paystack webhook error:", error);
-    res.sendStatus(400);
+    console.error(
+      "Paystack webhook error:",
+      error.message
+    );
+
+    return res.sendStatus(400);
   }
 });
 
-app.use(express.json({ limit: "2mb" }));
-app.use(express.urlencoded({ extended: true }));
-app.use(express.static(path.join(__dirname, "public")));
-
-// Customer checkout
-app.post("/api/checkout", customerAuth, async (req, res) => {
-  const { items, phone, delivery_address } = req.body;
-
-  if (!Array.isArray(items) || !items.length || !phone || !delivery_address) {
-    return res.status(400).json({
-      error: "Provide cart items, phone number and delivery address"
-    });
-  }
-
-  const client = await pool.connect();
-  let order;
-
+// CREATE CUSTOMER ORDER
+app.post("/api/orders", async (req, res) => {
   try {
-    await client.query("BEGIN");
+    const contact = String(
+      req.body.contact || ""
+    ).trim();
 
-    const quantities = new Map();
+    const link = String(
+      req.body.link || ""
+    ).trim();
 
-    for (const item of items) {
-      const id = Number(item.product_id);
-      const quantity = Number(item.quantity);
-
-      if (!Number.isInteger(id) || !Number.isInteger(quantity) ||
-          quantity < 1 || quantity > 100) {
-        throw new Error("Invalid cart item");
-      }
-
-      quantities.set(id, (quantities.get(id) || 0) + quantity);
-    }
-
-    const ids = [...quantities.keys()];
-
-    const productResult = await client.query(
-      `SELECT * FROM store_products
-       WHERE id = ANY($1::int[]) AND active = TRUE
-       FOR UPDATE`,
-      [ids]
+    const service = String(
+      req.body.service || ""
     );
 
-    if (productResult.rows.length !== ids.length) {
-      throw new Error("One or more products are unavailable");
-    }
-
-    let total = 0;
-
-    for (const product of productResult.rows) {
-      const quantity = quantities.get(product.id);
-
-      if (product.stock < quantity) {
-        throw new Error("Not enough stock for " + product.name);
-      }
-
-      total += Number(product.price) * quantity;
-    }
-
-    const reference = "TG-" + crypto.randomBytes(12).toString("hex");
-
-    const orderResult = await client.query(
-      `INSERT INTO store_orders
-       (user_id, reference, total_amount, phone, delivery_address)
-       VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-      [req.user.id, reference, total.toFixed(2), phone, delivery_address]
+    const quantity = Number(
+      req.body.quantity
     );
 
-    order = orderResult.rows[0];
-
-    for (const product of productResult.rows) {
-      await client.query(
-        `INSERT INTO store_order_items
-         (order_id, product_id, product_name, quantity, unit_price)
-         VALUES ($1, $2, $3, $4, $5)`,
-        [
-          order.id,
-          product.id,
-          product.name,
-          quantities.get(product.id),
-          product.price
-        ]
-      );
-    }
-
-    await client.query("COMMIT");
-  } catch (error) {
-    await client.query("ROLLBACK");
-    client.release();
-    return res.status(400).json({ error: error.message });
-  }
-
-  client.release();
-
-  try {
-    const paystackResponse = await fetch(
-      "https://api.paystack.co/transaction/initialize",
-      {
-        method: "POST",
-        headers: {
-          Authorization: "Bearer " + process.env.PAYSTACK_SECRET_KEY,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          email: req.user.email,
-          amount: Math.round(Number(order.total_amount) * 100),
-          currency: "GHS",
-          reference: order.reference,
-          callback_url: process.env.APP_URL
-            ? process.env.APP_URL.replace(/\/$/, "") + "/payment-callback.html"
-            : undefined
-        })
-      }
-    );
-
-    const data = await paystackResponse.json();
-
-    if (!paystackResponse.ok || !data.status || !data.data?.authorization_url) {
-      await pool.query(
-        `UPDATE store_orders
-         SET payment_status = 'Initialization Failed',
-             order_status = 'Payment Failed'
-         WHERE id = $1`,
-        [order.id]
-      );
-
-      return res.status(502).json({
-        error: data.message || "Could not start Paystack payment"
+    if (
+      !contact ||
+      contact.length < 7 ||
+      contact.length > 20
+    ) {
+      return res.status(400).json({
+        error: "Enter a valid phone number."
       });
     }
 
-    res.json({
-      authorization_url: data.data.authorization_url,
-      reference: order.reference
-    });
-  } catch (error) {
-    console.error("Checkout payment error:", error);
-    res.status(502).json({ error: "Could not connect to Paystack" });
-  }
-});
-
-// Customer verifies payment after returning from Paystack
-app.get("/api/payment/verify/:reference", customerAuth, async (req, res) => {
-  try {
-    const existing = await pool.query(
-      `SELECT * FROM store_orders
-       WHERE reference = $1 AND user_id = $2`,
-      [req.params.reference, req.user.id]
-    );
-
-    if (!existing.rows.length) {
-      return res.status(404).json({ error: "Order not found" });
+    if (!validTikTokLink(link)) {
+      return res.status(400).json({
+        error: "Enter a valid TikTok link."
+      });
     }
 
-    const order = await markOrderPaid(req.params.reference);
-    res.json({ message: "Payment verified", order });
-  } catch (error) {
-    res.status(400).json({ error: error.message });
-  }
-});
+    if (!SERVICES.includes(service)) {
+      return res.status(400).json({
+        error: "Select a valid campaign service."
+      });
+    }
 
-// Customer order history
-app.get("/api/my-orders", customerAuth, async (req, res) => {
-  try {
-    const result = await pool.query(
-      `SELECT o.*,
-        COALESCE(
-          json_agg(
-            json_build_object(
-              'product_name', i.product_name,
-              'quantity', i.quantity,
-              'unit_price', i.unit_price
-            )
-          ) FILTER (WHERE i.id IS NOT NULL),
-          '[]'
-        ) AS items
-       FROM store_orders o
-       LEFT JOIN store_order_items i ON i.order_id = o.id
-       WHERE o.user_id = $1
-       GROUP BY o.id
-       ORDER BY o.created_at DESC`,
-      [req.user.id]
+    const price = calculatePrice(
+      service,
+      quantity
     );
 
-    res.json(result.rows);
-  } catch (error) {
-    res.status(500).json({ error: "Could not load your orders" });
-  }
-});
+    const orderCode = makeOrderCode();
 
-// Admin order list
-app.get("/api/admin/orders", adminAuth, async (req, res) => {
-  try {
-    const result = await pool.query(
-      `SELECT o.*, u.name AS customer_name, u.email AS customer_email,
-        COALESCE(
-          json_agg(
-            json_build_object(
-              'product_name', i.product_name,
-              'quantity', i.quantity,
-              'unit_price', i.unit_price
-            )
-          ) FILTER (WHERE i.id IS NOT NULL),
-          '[]'
-        ) AS items
-       FROM store_orders o
-       LEFT JOIN store_users u ON u.id = o.user_id
-       LEFT JOIN store_order_items i ON i.order_id = o.id
-       GROUP BY o.id, u.name, u.email
-       ORDER BY o.created_at DESC`
+    const user = await getCustomer(req);
+
+    const saved = await pool.query(
+      `INSERT INTO orders
+       (order_code, customer_name, contact, service,
+        tiktok_link, details, quantity, price_ghs, user_id)
+       VALUES ($1, 'Customer', $2, $3, $4, $5, $6, $7, $8)
+       RETURNING order_code, service, quantity,
+                 price_ghs, status, created_at`,
+      [
+        orderCode,
+        contact,
+        service,
+        link,
+        "Campaign request",
+        quantity,
+        price,
+        user?.id || null
+      ]
     );
 
-    res.json(result.rows);
+    res.status(201).json(saved.rows[0]);
+
   } catch (error) {
-    console.error("Admin orders error:", error);
-    res.status(500).json({ error: "Could not load orders" });
+    console.error("Order error:", error.message);
+
+    res.status(400).json({
+      error: error.message || "Could not save order."
+    });
   }
 });
 
-// Admin update order status
-app.patch("/api/admin/orders/:id", adminAuth, async (req, res) => {
-  const allowed = [
-    "Processing",
-    "Ready for Delivery",
-    "Shipped",
-    "Completed",
-    "Cancelled"
-  ];
-
-  const status = req.body.order_status;
-
-  if (!allowed.includes(status)) {
-    return res.status(400).json({ error: "Invalid order status" });
-  }
-
+// CUSTOMER ORDER TRACKING
+app.get("/api/orders/:code", async (req, res) => {
   try {
     const result = await pool.query(
-      `UPDATE store_orders SET order_status = $1
-       WHERE id = $2 AND payment_status = 'Paid'
-       RETURNING *`,
-      [status, req.params.id]
+      `SELECT order_code, service, quantity, price_ghs,
+              status, paid_at, created_at
+       FROM orders
+       WHERE order_code = $1`,
+      [req.params.code]
     );
 
     if (!result.rows.length) {
       return res.status(404).json({
-        error: "Paid order not found"
+        error: "Order not found."
       });
     }
 
-    res.json(result.rows[0]);
+    const order = result.rows[0];
+
+    res.json({
+      ...order,
+      payment_status: order.paid_at
+        ? "Paid"
+        : "Not paid"
+    });
+
   } catch (error) {
-    res.status(500).json({ error: "Could not update order" });
+    console.error("Tracking error:", error.message);
+
+    res.status(500).json({
+      error: "Could not check order."
+    });
   }
 });
 
-// Error handler
-app.use((error, req, res, next) => {
-  console.error("Server error:", error);
-  res.status(500).json({ error: error.message || "Server error" });
+// INITIALIZE PAYSTACK CHECKOUT
+app.post("/api/orders/:code/pay", async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT * FROM orders
+       WHERE order_code = $1`,
+      [req.params.code]
+    );
+
+    if (!result.rows.length) {
+      return res.status(404).json({
+        error: "Order not found."
+      });
+    }
+
+    const order = result.rows[0];
+
+    if (order.paid_at) {
+      return res.status(400).json({
+        error: "This order has already been paid."
+      });
+    }
+
+    if (Number(order.price_ghs) < 1) {
+      return res.status(400).json({
+        error: "The minimum online payment is GH₵1."
+      });
+    }
+
+    const reference =
+      "TIKGROW-" +
+      crypto.randomBytes(12).toString("hex");
+
+    await pool.query(
+      `UPDATE orders
+       SET payment_reference = $1
+       WHERE id = $2`,
+      [reference, order.id]
+    );
+
+    const digits = order.contact.replace(
+      /\D/g,
+      ""
+    );
+
+    const email =
+      digits +
+      "@tikgrow-platform1.onrender.com";
+
+    const response = await fetch(
+      "https://api.paystack.co/transaction/initialize",
+      {
+        method: "POST",
+        headers: {
+          Authorization:
+            "Bearer " + process.env.PAYSTACK_SECRET_KEY,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          email,
+          amount: String(
+            Math.round(
+              Number(order.price_ghs) * 100
+            )
+          ),
+          currency: "GHS",
+          reference,
+          channels: ["card", "mobile_money"],
+          callback_url:
+            "https://tikgrow-platform1.onrender.com/payment-callback"
+        })
+      }
+    );
+
+    const data = await response.json();
+
+    if (
+      !response.ok ||
+      !data.status ||
+      !data.data?.authorization_url
+    ) {
+      console.error("Paystack response:", data);
+
+      return res.status(502).json({
+        error:
+          data.message ||
+          "Could not start payment."
+      });
+    }
+
+    res.json({
+      authorization_url:
+        data.data.authorization_url,
+      reference
+    });
+
+  } catch (error) {
+    console.error(
+      "Payment setup error:",
+      error.message
+    );
+
+    res.status(500).json({
+      error: "Could not initialize payment."
+    });
+  }
 });
 
-// Start only after database setup succeeds
+// CUSTOMER RETURNS FROM PAYSTACK
+app.get("/payment-callback", async (req, res) => {
+  try {
+    const reference = String(
+      req.query.reference ||
+      req.query.trxref ||
+      ""
+    );
+
+    if (!reference) {
+      return res.redirect(
+        "/?payment=missing"
+      );
+    }
+
+    const orderCode = await confirmPayment(
+      reference
+    );
+
+    return res.redirect(
+      "/payment-success.html?order=" +
+      encodeURIComponent(orderCode)
+    );
+
+  } catch (error) {
+    console.error(
+      "Payment callback error:",
+      error.message
+    );
+
+    return res.redirect(
+      "/?payment=verify-failed"
+    );
+  }
+});
+
+// ADMIN: VIEW ORDERS
+app.get("/api/admin/orders", adminOnly, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT * FROM orders
+       ORDER BY created_at DESC
+       LIMIT 500`
+    );
+
+    res.json(result.rows);
+
+  } catch (error) {
+    console.error(
+      "Admin orders error:",
+      error.message
+    );
+
+    res.status(500).json({
+      error: "Could not load orders."
+    });
+  }
+});
+
+// ADMIN: CHECK SMM AFRICA CONNECTION
+app.post(
+  "/api/admin/provider/check",
+  adminOnly,
+  async (req, res) => {
+    try {
+      const [balance, services] =
+        await Promise.all([
+          smmRequest("balance"),
+          smmRequest("services")
+        ]);
+
+      if (!Array.isArray(services)) {
+        throw new Error(
+          "Provider returned an unexpected service list."
+        );
+      }
+
+      const tiktokServices = services
+        .filter(item =>
+          /tiktok/i.test(
+            String(item.name || "") +
+            " " +
+            String(item.category || "")
+          )
+        )
+        .map(item => ({
+          service: item.service,
+          name: item.name,
+          rate: item.rate,
+          min: item.min,
+          max: item.max,
+          type: item.type
+        }));
+
+      res.json({
+        success: true,
+        message:
+          "SMM Africa connection successful.",
+        balance: balance.balance,
+        currency: balance.currency,
+        total_services: services.length,
+        tiktok_services: tiktokServices
+      });
+
+    } catch (error) {
+      console.error(
+        "Provider check error:",
+        error.message
+      );
+
+      res.status(502).json({
+        success: false,
+        error: error.message
+      });
+    }
+  }
+);
+
+// ADMIN: UPDATE PROMOTION STATUS
+app.patch(
+  "/api/admin/orders/:id",
+  adminOnly,
+  async (req, res) => {
+    try {
+      const allowedStatuses = [
+        "New",
+        "Awaiting Payment",
+        "In Progress",
+        "Completed",
+        "Cancelled"
+      ];
+
+      const status = req.body.status;
+
+      if (!allowedStatuses.includes(status)) {
+        return res.status(400).json({
+          error: "Invalid order status."
+        });
+      }
+
+      const result = await pool.query(
+        `UPDATE orders
+         SET status = $1
+         WHERE id = $2
+           AND paid_at IS NOT NULL
+         RETURNING id, order_code, status`,
+        [status, req.params.id]
+      );
+
+      if (!result.rows.length) {
+        return res.status(400).json({
+          error:
+            "Only paid orders can be updated for promotion."
+        });
+      }
+
+      res.json(result.rows[0]);
+
+    } catch (error) {
+      console.error(
+        "Admin update error:",
+        error.message
+      );
+
+      res.status(500).json({
+        error: "Could not update order."
+      });
+    }
+  }
+);
+
+// HEALTH CHECK
+app.get("/api/health", (req, res) => {
+  res.json({
+    status: "ok",
+    message: "TIKGROW is online"
+  });
+});
+
+// HOMEPAGE
+app.get("/", (req, res) => {
+  res.sendFile(
+    path.join(__dirname, "index.html")
+  );
+});
+
+// OTHER STATIC PAGES
+app.get(/.*/, (req, res, next) => {
+  const requestedFile = path.join(
+    __dirname,
+    req.path
+  );
+
+  if (
+    !requestedFile.startsWith(
+      __dirname + path.sep
+    ) ||
+    req.path.startsWith("/api/")
+  ) {
+    return next();
+  }
+
+  res.sendFile(
+    requestedFile,
+    error => {
+      if (error && !res.headersSent) {
+        res.status(404).send("Page not found");
+      }
+    }
+  );
+});
+
+// START SERVER
 initializeDatabase()
   .then(() => {
-    app.listen(PORT, "0.0.0.0", () => {
-      console.log("TIKGROW store running on port " + PORT);
+    app.listen(PORT, () => {
+      console.log(
+        "TIKGROW running on port " + PORT
+      );
     });
   })
   .catch(error => {
-    console.error("Database startup failed:", error);
+    console.error(
+      "Database initialization failed:",
+      error
+    );
+
     process.exit(1);
   });
