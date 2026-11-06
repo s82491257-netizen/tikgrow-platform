@@ -7,7 +7,7 @@ const rateLimit = require("express-rate-limit");
 const path = require("path");
 const fs = require("fs");
 
-const { testDatabase } = require("./db");
+const { testDatabase, pool } = require("./db");
 
 const authRoutes = require("./routes/auth");
 const productsRoutes = require("./routes/products");
@@ -42,7 +42,7 @@ app.use(rateLimit({
   legacyHeaders: false
 }));
 
-// HEALTH CHECK
+// SERVER HEALTH
 app.get("/api/health", (req, res) => {
   res.json({
     success: true,
@@ -85,63 +85,19 @@ app.get("/auth", (req, res) => {
   );
 });
 
-// STORE PAGE
-app.get("/store", requireAuth, (req, res) => {
+// ADMIN SETUP PAGE
+app.get("/admin-setup", requireAuth, (req, res) => {
   res.sendFile(
-    path.join(__dirname, "public", "store.html")
+    path.join(__dirname, "public", "admin-setup.html")
   );
 });
 
-// CART PAGE
-app.get("/cart", requireAuth, (req, res) => {
-  res.sendFile(
-    path.join(__dirname, "public", "cart.html")
-  );
-});
-
-// CHECKOUT PAGE
-app.get("/checkout", requireAuth, (req, res) => {
-  res.sendFile(
-    path.join(__dirname, "public", "checkout.html")
-  );
-});
-
-// PAYMENT VERIFICATION PAGE
-app.get("/payment/verify", requireAuth, (req, res) => {
-  res.sendFile(
-    path.join(__dirname, "public", "payment.html")
-  );
-});
-
-// ACCOUNT PAGE
-app.get("/account", requireAuth, (req, res) => {
-  res.sendFile(
-    path.join(__dirname, "public", "account.html")
-  );
-});
-
-// SETTINGS PAGE
-app.get("/settings", requireAuth, (req, res) => {
-  const settingsFile = path.join(
-    __dirname,
-    "public",
-    "settings.html"
-  );
-
-  if (!fs.existsSync(settingsFile)) {
-    return res.status(404).send(
-      "Settings page is not ready yet."
-    );
-  }
-
-  res.sendFile(settingsFile);
-});
-
-// ADMIN DASHBOARD PAGE
+// ADMIN DASHBOARD
 app.get("/admin", requireAuth, async (req, res) => {
   try {
-    const result = await require("./db").pool.query(
-      `SELECT role FROM users
+    const result = await pool.query(
+      `SELECT role
+       FROM users
        WHERE id = $1 AND is_active = TRUE`,
       [req.user.id]
     );
@@ -176,6 +132,58 @@ app.get("/admin", requireAuth, async (req, res) => {
       "Unable to load admin dashboard."
     );
   }
+});
+
+// STORE
+app.get("/store", requireAuth, (req, res) => {
+  res.sendFile(
+    path.join(__dirname, "public", "store.html")
+  );
+});
+
+// CART
+app.get("/cart", requireAuth, (req, res) => {
+  res.sendFile(
+    path.join(__dirname, "public", "cart.html")
+  );
+});
+
+// CHECKOUT
+app.get("/checkout", requireAuth, (req, res) => {
+  res.sendFile(
+    path.join(__dirname, "public", "checkout.html")
+  );
+});
+
+// PAYMENT CONFIRMATION
+app.get("/payment/verify", requireAuth, (req, res) => {
+  res.sendFile(
+    path.join(__dirname, "public", "payment.html")
+  );
+});
+
+// CUSTOMER ACCOUNT
+app.get("/account", requireAuth, (req, res) => {
+  res.sendFile(
+    path.join(__dirname, "public", "account.html")
+  );
+});
+
+// SETTINGS
+app.get("/settings", requireAuth, (req, res) => {
+  const settingsFile = path.join(
+    __dirname,
+    "public",
+    "settings.html"
+  );
+
+  if (!fs.existsSync(settingsFile)) {
+    return res.status(404).send(
+      "Settings page is not ready yet."
+    );
+  }
+
+  res.sendFile(settingsFile);
 });
 
 // CUSTOMER ACCOUNT API
