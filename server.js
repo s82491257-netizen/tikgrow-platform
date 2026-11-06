@@ -473,7 +473,6 @@ async function submitSmmOrder(orderCode) {
          AND smm_order_id IS NULL`,
       [String(error.message).slice(0, 500), orderCode]
     );
-
     throw error;
   }
 }
