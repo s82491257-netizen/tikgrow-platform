@@ -117,3 +117,39 @@ CREATE INDEX idx_orders_user ON orders(user_id);
 CREATE INDEX idx_orders_status ON orders(status);
 CREATE INDEX idx_payments_reference ON payments(reference);
 CREATE INDEX idx_wallet_transactions_wallet ON wallet_transactions(wallet_id);
+
+
+-- SAVCEL HUB DATA SERVICES
+
+CREATE TABLE IF NOT EXISTS data_bundles (
+    id BIGSERIAL PRIMARY KEY,
+    network VARCHAR(30) NOT NULL,
+    name VARCHAR(120) NOT NULL,
+    data_size VARCHAR(50) NOT NULL,
+    validity VARCHAR(50),
+    price NUMERIC(12,2) NOT NULL CHECK (price >= 0),
+    reseller_price NUMERIC(12,2) NOT NULL DEFAULT 0,
+    currency VARCHAR(10) NOT NULL DEFAULT 'GHS',
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS data_orders (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL REFERENCES users(id),
+    bundle_id BIGINT REFERENCES data_bundles(id),
+    network VARCHAR(30) NOT NULL,
+    bundle_name VARCHAR(120) NOT NULL,
+    phone VARCHAR(20) NOT NULL,
+    amount NUMERIC(12,2) NOT NULL CHECK (amount >= 0),
+    currency VARCHAR(10) NOT NULL DEFAULT 'GHS',
+    status VARCHAR(30) NOT NULL DEFAULT 'pending',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_data_bundles_active
+ON data_bundles(is_active);
+
+CREATE INDEX IF NOT EXISTS idx_data_orders_user
+ON data_orders(user_id, created_at DESC);
+
