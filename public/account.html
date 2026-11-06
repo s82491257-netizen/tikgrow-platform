@@ -1,0 +1,111 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#eaf6ff">
+<title>My Account | SavCel Hub</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#f3f9ff;color:#17324d;font-family:Arial,sans-serif}
+header{padding:20px 5%;background:#fff;border-bottom:1px solid #d9ebfa;display:flex;justify-content:space-between;align-items:center}
+.logo{font-size:22px;font-weight:900;color:#1684d8}
+a{color:#1684d8;text-decoration:none}
+main{max-width:850px;margin:35px auto;padding:0 18px}
+h1{font-size:29px;margin-bottom:8px;color:#17324d}
+h2{color:#17324d}
+.muted{color:#70879d}
+.card{background:#fff;border:1px solid #dcecf9;border-radius:17px;padding:22px;margin:18px 0;box-shadow:0 5px 20px rgba(42,119,180,.06)}
+.profile{display:flex;align-items:center;gap:15px}
+.avatar{width:58px;height:58px;border-radius:50%;background:#d9efff;color:#087bc9;display:grid;place-items:center;font-size:25px;font-weight:bold}
+.info{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:22px}
+.label{color:#7892a9;font-size:12px;margin-bottom:7px}
+.value{font-size:15px;overflow-wrap:anywhere;color:#17324d}
+.btn{display:inline-block;padding:12px 18px;border:0;border-radius:10px;background:#1684d8;color:white;font-weight:bold;cursor:pointer}
+.btn.secondary{background:#e5f3ff;color:#087bc9}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px}
+.empty{padding:18px;text-align:center;background:#f0f8ff;border-radius:12px;color:#70879d}
+@media(max-width:520px){.info{grid-template-columns:1fr}header{padding:16px}.card{padding:18px}}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">SavCel Hub</div>
+  <a href="/">Home</a>
+</header>
+
+<main>
+  <p class="muted">CUSTOMER DASHBOARD</p>
+  <h1>My Account</h1>
+  <p class="muted">Manage your profile and view your account information.</p>
+
+  <section class="card">
+    <div class="profile">
+      <div class="avatar" id="avatar">S</div>
+      <div>
+        <h2 id="fullName">Loading account...</h2>
+        <p class="muted" id="role">Please wait</p>
+      </div>
+    </div>
+
+    <div class="info">
+      <div><div class="label">FULL NAME</div><div class="value" id="nameValue">Loading...</div></div>
+      <div><div class="label">EMAIL ADDRESS</div><div class="value" id="emailValue">Loading...</div></div>
+      <div><div class="label">PHONE NUMBER</div><div class="value" id="phoneValue">Not provided</div></div>
+      <div><div class="label">ACCOUNT TYPE</div><div class="value" id="roleValue">Loading...</div></div>
+    </div>
+
+    <div class="actions">
+      <a class="btn secondary" href="/settings">Settings</a>
+      <button class="btn" id="logoutBtn">Log Out</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>My Orders</h2>
+    <p class="muted">Your purchases and order updates will appear here.</p>
+    <div class="empty">No order history to display yet.</div>
+  </section>
+
+  <section class="card">
+    <h2>Reseller Account</h2>
+    <p class="muted">Reseller application and account information.</p>
+    <div class="empty">Reseller information will appear here when available.</div>
+  </section>
+
+  <p class="muted" id="message"></p>
+</main>
+
+<script>
+async function loadAccount(){
+  try{
+    const response=await fetch("/api/auth/me",{credentials:"same-origin",cache:"no-store"});
+    if(!response.ok){window.location.replace("/auth");return;}
+    const result=await response.json();
+    if(!result.success||!result.user){window.location.replace("/auth");return;}
+    const user=result.user;
+    const name=user.full_name||"SavCel Customer";
+    document.getElementById("fullName").textContent=name;
+    document.getElementById("nameValue").textContent=name;
+    document.getElementById("emailValue").textContent=user.email||"Not provided";
+    document.getElementById("phoneValue").textContent=user.phone||"Not provided";
+    document.getElementById("role").textContent="Welcome to SavCel Hub";
+    document.getElementById("roleValue").textContent=user.role||"customer";
+    document.getElementById("avatar").textContent=name.charAt(0).toUpperCase();
+  }catch(error){
+    document.getElementById("message").textContent="Unable to load your account. Please refresh.";
+  }
+}
+
+document.getElementById("logoutBtn").addEventListener("click",async()=>{
+  try{
+    await fetch("/api/auth/logout",{method:"POST",credentials:"same-origin"});
+  }finally{
+    window.location.replace("/auth");
+  }
+});
+loadAccount();
+</script>
+</body>
+</html>
