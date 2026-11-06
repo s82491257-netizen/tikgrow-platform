@@ -8,15 +8,17 @@ const path = require("path");
 const fs = require("fs");
 
 const { testDatabase } = require("./db");
+
 const authRoutes = require("./routes/auth");
 const productsRoutes = require("./routes/products");
 const cartRoutes = require("./routes/cart");
+const checkoutRoutes = require("./routes/checkout");
+
 const requireAuth = require("./middleware/auth");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// SECURITY
 app.disable("x-powered-by");
 app.set("trust proxy", 1);
 
@@ -25,6 +27,7 @@ app.use(helmet({
 }));
 
 app.use(express.json({ limit: "1mb" }));
+
 app.use(express.urlencoded({
   extended: false,
   limit: "1mb"
@@ -46,7 +49,7 @@ app.get("/api/health", (req, res) => {
   });
 });
 
-// DATABASE HEALTH CHECK
+// DATABASE HEALTH
 app.get("/api/db-health", async (req, res) => {
   try {
     const result = await testDatabase();
@@ -66,16 +69,13 @@ app.get("/api/db-health", async (req, res) => {
   }
 });
 
-// AUTHENTICATION
+// API ROUTES
 app.use("/api/auth", authRoutes);
-
-// PRODUCTS
 app.use("/api/products", productsRoutes);
-
-// SHOPPING CART
 app.use("/api/cart", cartRoutes);
+app.use("/api/checkout", checkoutRoutes);
 
-// LOGIN AND REGISTRATION
+// LOGIN PAGE
 app.get("/auth", (req, res) => {
   res.sendFile(
     path.join(__dirname, "public", "auth.html")
@@ -89,18 +89,47 @@ app.get("/store", requireAuth, (req, res) => {
   );
 });
 
-// SHOPPING CART PAGE
+// CART PAGE
 app.get("/cart", requireAuth, (req, res) => {
   res.sendFile(
     path.join(__dirname, "public", "cart.html")
   );
 });
 
-// MY ACCOUNT PAGE
+// CHECKOUT PAGE
+app.get("/checkout", requireAuth, (req, res) => {
+  res.sendFile(
+    path.join(__dirname, "public", "checkout.html")
+  );
+});
+
+// PAYMENT VERIFICATION PAGE
+app.get("/payment/verify", requireAuth, (req, res) => {
+  res.sendFile(
+    path.join(__dirname, "public", "payment.html")
+  );
+});
+
+// ACCOUNT PAGE
 app.get("/account", requireAuth, (req, res) => {
   res.sendFile(
     path.join(__dirname, "public", "account.html")
   );
+});
+
+// SETTINGS PAGE
+app.get("/settings", requireAuth, (req, res) => {
+  const settingsFile = path.join(
+    __dirname,
+    "public",
+    "settings.html"
+  );
+
+  if (!fs.existsSync(settingsFile)) {
+    return res.status(404).send("Settings page is not ready yet.");
+  }
+
+  res.sendFile(settingsFile);
 });
 
 // CUSTOMER HOMEPAGE
@@ -123,9 +152,19 @@ app.get("/api/customer/account", requireAuth, (req, res) => {
   });
 });
 
-// PUBLIC WEBSITE ASSETS
+// BLOCK DIRECT HTML FILE ACCESS
+app.use((req, res, next) => {
+  if (req.path.toLowerCase().endsWith(".html")) {
+    return res.redirect("/auth");
+  }
+
+  next();
+});
+
+// PUBLIC ASSETS
 app.use(express.static(
-  path.join(__dirname, "public")
+  path.join(__dirname, "public"),
+  { index: false }
 ));
 
 // UNKNOWN API ROUTES
