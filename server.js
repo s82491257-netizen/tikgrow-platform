@@ -19,11 +19,7 @@ const required = [
 for (const key of required) {
   if (!process.env[key]) {
     console.error("Missing environment variable:", key);
-    process.exit(1);
-  }
-}
-
-// TIKGROW CUSTOMER PRICES PER 1,000
+    process.exit(// TIKGROW CUSTOMER PRICES PER 1,000
 const PRICES = {
   "TikTok Likes": 25,
   "Comments": 250,
@@ -328,6 +324,171 @@ async function smmRequest(action, params = {}) {
   return data;
 }
 
+
+// TIKGROW TO SMM AFRICA SERVICE MAPPING
+const SMM_SERVICE_MAP = {
+  "TikTok Likes": 1350,
+  "Comments": 1403,
+  "Followers": 1068,
+  "Video Views": 1804,
+  "Saves": 3417,
+  "LIVE Promotion": 3392
+};
+
+// AUTOMATIC SMM ORDER SUBMISSION
+async function submitSmmOrder(orderCode) {
+  if (process.env.SMM_AUTO_DELIVERY_ENABLED !== "true") {
+    return { submitted: false, reason: "Automatic delivery is disabled." };
+  }
+
+  const client = await pool.connect();
+  let order;
+  let payload;
+
+  try {
+    await client.query("BEGIN");
+
+    const result = await client.query(
+      `SELECT * FROM orders
+       WHERE order_code = $1
+       FOR UPDATE`,
+      [orderCode]
+    );
+
+    if (!result.rows.length) {
+      throw new Error("Order not found.");
+    }
+
+    order = result.rows[0];
+
+    if (!order.paid_at) {
+      throw new Error("Cannot submit an unpaid order.");
+    }
+
+    if (order.smm_order_id) {
+      await client.query("COMMIT");
+      return {
+        submitted: true,
+        already_submitted: true,
+        provider_order_id: order.smm_order_id
+      };
+    }
+
+    const serviceId = SMM_SERVICE_MAP[order.service];
+
+    if (!serviceId) {
+      throw new Error("No provider service mapping for this order.");
+    }
+
+    if (order.smm_payload) {
+      payload = order.smm_payload;
+    } else {
+      const idempotencyKey =
+        "TIKGROW-" + crypto.randomBytes(16).toString("hex");
+
+      payload = {
+        service: serviceId,
+        link: order.tiktok_link,
+        quantity: Number(order.quantity),
+        idempotency_key: idempotencyKey
+      };
+
+      await client.query(
+        `UPDATE orders
+         SET smm_service_id = $1,
+             smm_idempotency_key = $2,
+             smm_payload = $3,
+             smm_status = 'Submitting',
+             smm_error = NULL
+         WHERE id = $4`,
+        [
+          serviceId,
+          idempotencyKey,
+          JSON.stringify(payload),
+          order.id
+        ]
+      );
+    }
+
+    await client.query("COMMIT");
+
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+
+  try {
+    // Verify the mapped service still exists in the live catalogue.
+    const services = await smmRequest("services");
+
+    if (!Array.isArray(services)) {
+      throw new Error("Invalid provider service catalogue.");
+    }
+
+    const liveService = services.find(
+      item => Number(item.service) === Number(payload.service)
+    );
+
+    if (
+      !liveService ||
+      String(liveService.type || "").toLowerCase() !== "default"
+    ) {
+      throw new Error("Mapped provider service is unavailable or unsupported.");
+    }
+
+    if (
+      Number(payload.quantity) < Number(liveService.min) ||
+      Number(payload.quantity) > Number(liveService.max)
+    ) {
+      throw new Error("Order quantity is outside provider limits.");
+    }
+
+    const result = await smmRequest("add", payload);
+
+    if (!result.order) {
+      throw new Error("Provider did not return an order ID.");
+    }
+
+    await pool.query(
+      `UPDATE orders
+       SET smm_order_id = $1,
+           smm_status = $2,
+           smm_charged_usd = $3,
+           smm_submitted_at = NOW(),
+           smm_error = NULL,
+           status = 'In Progress'
+       WHERE order_code = $4`,
+      [
+        String(result.order),
+        result.queued ? "Queued" : "Submitted",
+        result.charged == null ? null : Number(result.charged),
+        orderCode
+      ]
+    );
+
+    return {
+      submitted: true,
+      provider_order_id: String(result.order),
+      status: result.queued ? "Queued" : "Submitted"
+    };
+
+  } catch (error) {
+    await pool.query(
+      `UPDATE orders
+       SET smm_status = 'Failed',
+           smm_error = $1
+       WHERE order_code = $2
+         AND smm_order_id IS NULL`,
+      [String(error.message).slice(0, 500), orderCode]
+    );
+
+    throw error;
+  }
+}
+
+    
 // DATABASE SETUP
 async function initializeDatabase() {
   await pool.query(`
