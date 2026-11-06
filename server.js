@@ -10,12 +10,13 @@ const fs = require("fs");
 const { testDatabase } = require("./db");
 const authRoutes = require("./routes/auth");
 const productsRoutes = require("./routes/products");
+const cartRoutes = require("./routes/cart");
 const requireAuth = require("./middleware/auth");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// BASIC SECURITY
+// SECURITY
 app.disable("x-powered-by");
 app.set("trust proxy", 1);
 
@@ -45,7 +46,7 @@ app.get("/api/health", (req, res) => {
   });
 });
 
-// DATABASE CHECK
+// DATABASE HEALTH CHECK
 app.get("/api/db-health", async (req, res) => {
   try {
     const result = await testDatabase();
@@ -56,7 +57,7 @@ app.get("/api/db-health", async (req, res) => {
       time: result.current_time
     });
   } catch (error) {
-    console.error("Database check failed:", error.message);
+    console.error("Database error:", error.message);
 
     res.status(500).json({
       success: false,
@@ -65,42 +66,44 @@ app.get("/api/db-health", async (req, res) => {
   }
 });
 
-// AUTHENTICATION API
+// AUTHENTICATION
 app.use("/api/auth", authRoutes);
 
-// PRODUCTS AND STORE API
+// PRODUCTS
 app.use("/api/products", productsRoutes);
 
-// LOGIN AND REGISTRATION PAGE
+// SHOPPING CART
+app.use("/api/cart", cartRoutes);
+
+// LOGIN AND REGISTRATION
 app.get("/auth", (req, res) => {
-  const authPage = path.join(
-    __dirname,
-    "public",
-    "auth.html"
+  res.sendFile(
+    path.join(__dirname, "public", "auth.html")
   );
-
-  if (!fs.existsSync(authPage)) {
-    return res.status(404).send("Login page not found.");
-  }
-
-  res.sendFile(authPage);
 });
 
-// PROTECTED STORE PAGE
+// STORE PAGE
 app.get("/store", requireAuth, (req, res) => {
   res.sendFile(
     path.join(__dirname, "public", "store.html")
   );
 });
 
-// PROTECTED MY ACCOUNT PAGE
+// SHOPPING CART PAGE
+app.get("/cart", requireAuth, (req, res) => {
+  res.sendFile(
+    path.join(__dirname, "public", "cart.html")
+  );
+});
+
+// MY ACCOUNT PAGE
 app.get("/account", requireAuth, (req, res) => {
   res.sendFile(
     path.join(__dirname, "public", "account.html")
   );
 });
 
-// PROTECTED CUSTOMER HOMEPAGE
+// CUSTOMER HOMEPAGE
 app.get("/", requireAuth, (req, res) => {
   const homepage = path.join(__dirname, "index.html");
 
@@ -111,7 +114,7 @@ app.get("/", requireAuth, (req, res) => {
   res.sendFile(homepage);
 });
 
-// PROTECTED CUSTOMER API
+// CUSTOMER ACCOUNT API
 app.get("/api/customer/account", requireAuth, (req, res) => {
   res.json({
     success: true,
