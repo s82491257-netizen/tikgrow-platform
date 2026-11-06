@@ -1,13 +1,13 @@
 
-
-
 const express = require("express");
 const { Pool } = require("pg");
 const path = require("path");
 const crypto = require("crypto");
+const { promisify } = require("util");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const scrypt = promisify(crypto.scrypt);
 
 const required = [
   "DATABASE_URL",
@@ -22,7 +22,6 @@ for (const key of required) {
   }
 }
 
-// TIKGROW automatic campaign prices per 1,000 units.
 const PRICES = {
   "TikTok Likes": 25,
   "Comments": 35,
@@ -33,6 +32,22 @@ const PRICES = {
 };
 
 const SERVICES = Object.keys(PRICES);
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.DATABASE_URL.includes("localhost")
+    ? false
+    : { rejectUnauthorized: false }
+});
+
+app.use(express.json({
+  verify: (req, res, buffer) => {
+    req.rawBody = Buffer.from(buffer);
+  }
+}));
+
+app.use(express.urlencoded({ extended: true }));
+app.use(express.static(path.join(__dirname, "public")));
 
 function calculatePrice(service, quantity) {
   if (!Number.isSafeInteger(quantity) || quantity < 1 || quantity > 1000000) {
@@ -46,23 +61,113 @@ function calculatePrice(service, quantity) {
   return Math.round(PRICES[service] * quantity / 1000 * 100) / 100;
 }
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.DATABASE_URL.includes("localhost")
-    ? false
-    : { rejectUnauthorized: false }
-});
+function normalizePhone(value) {
+  let phone = String(value || "").replace(/[\s()-]/g, "");
 
-// Keep the original request bytes for Paystack webhook verification.
-app.use(express.json({
-  verify: (req, res, buffer) => {
-    req.rawBody = Buffer.from(buffer);
+  if (/^0\d{9}$/.test(phone)) {
+    phone = "+233" + phone.slice(1);
+  } else if (/^233\d{9}$/.test(phone)) {
+    phone = "+" + phone;
   }
-}));
 
-app.use(express.urlencoded({ extended: true }));
+  if (!/^\+[1-9]\d{7,14}$/.test(phone)) {
+    throw new Error("Enter a valid phone number, including country code.");
+  }
 
-app.use(express.static(path.join(__dirname, "public")));
+  return phone;
+}
+
+function makeOrderCode() {
+  return "TG-" + crypto.randomBytes(5).toString("hex").toUpperCase();
+}
+
+function validTikTokLink(value) {
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" &&
+      [
+        "tiktok.com",
+        "www.tiktok.com",
+        "m.tiktok.com",
+        "vm.tiktok.com",
+        "vt.tiktok.com"
+      ].includes(url.hostname);
+  } catch {
+    return false;
+  }
+}
+
+function getCookie(req, name) {
+  const cookies = String(req.headers.cookie || "").split(";");
+
+  for (const cookie of cookies) {
+    const index = cookie.indexOf("=");
+    if (index < 0) continue;
+
+    if (cookie.slice(0, index).trim() === name) {
+      return decodeURIComponent(cookie.slice(index + 1).trim());
+    }
+  }
+
+  return null;
+}
+
+function setSessionCookie(res, token) {
+  res.setHeader(
+    "Set-Cookie",
+    "tg_session=" + encodeURIComponent(token) +
+    "; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=2592000"
+  );
+}
+
+function clearSessionCookie(res) {
+  res.setHeader(
+    "Set-Cookie",
+    "tg_session=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0"
+  );
+}
+
+async function createCustomerSession(userId, res) {
+  const token = crypto.randomBytes(32).toString("hex");
+  const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
+
+  await pool.query(
+    `INSERT INTO customer_sessions (token_hash, user_id, expires_at)
+     VALUES ($1, $2, NOW() + INTERVAL '30 days')`,
+    [tokenHash, userId]
+  );
+
+  setSessionCookie(res, token);
+}
+
+async function getCustomer(req) {
+  const token = getCookie(req, "tg_session");
+  if (!token || !/^[a-f0-9]{64}$/i.test(token)) return null;
+
+  const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
+
+  const result = await pool.query(
+    `SELECT u.id, u.phone
+     FROM customer_sessions s
+     JOIN customer_users u ON u.id = s.user_id
+     WHERE s.token_hash = $1
+       AND s.expires_at > NOW()
+     LIMIT 1`,
+    [tokenHash]
+  );
+
+  return result.rows[0] || null;
+}
+
+async function adminOnly(req, res, next) {
+  const token = req.headers["x-admin-token"];
+
+  if (!token || token !== process.env.ADMIN_SETUP_TOKEN) {
+    return res.status(401).json({ error: "Unauthorized admin access." });
+  }
+
+  next();
+}
 
 // DATABASE SETUP
 async function initializeDatabase() {
@@ -101,53 +206,207 @@ async function initializeDatabase() {
   `);
 
   await pool.query(`
+    CREATE TABLE IF NOT EXISTS customer_users (
+      id SERIAL PRIMARY KEY,
+      phone TEXT UNIQUE NOT NULL,
+      password_hash TEXT NOT NULL,
+      password_salt TEXT NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS customer_sessions (
+      id SERIAL PRIMARY KEY,
+      token_hash TEXT UNIQUE NOT NULL,
+      user_id INTEGER NOT NULL REFERENCES customer_users(id) ON DELETE CASCADE,
+      expires_at TIMESTAMPTZ NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+
+  await pool.query(`
+    ALTER TABLE orders
+    ADD COLUMN IF NOT EXISTS user_id INTEGER
+    REFERENCES customer_users(id) ON DELETE SET NULL
+  `);
+
+  await pool.query(`
     CREATE UNIQUE INDEX IF NOT EXISTS orders_payment_reference_unique
     ON orders(payment_reference)
     WHERE payment_reference IS NOT NULL
   `);
 
+  await pool.query(`
+    CREATE INDEX IF NOT EXISTS orders_user_id_idx ON orders(user_id)
+  `);
+
+  await pool.query(`
+    DELETE FROM customer_sessions WHERE expires_at < NOW()
+  `);
+
   console.log("TIKGROW database ready.");
 }
 
-function makeOrderCode() {
-  return "TG-" + crypto.randomBytes(5).toString("hex").toUpperCase();
-}
-
-function validTikTokLink(value) {
+// CUSTOMER REGISTRATION
+app.post("/api/auth/register", async (req, res) => {
   try {
-    const url = new URL(value);
-    return (
-      url.protocol === "https:" &&
-      [
-        "tiktok.com",
-        "www.tiktok.com",
-        "m.tiktok.com",
-        "vm.tiktok.com",
-        "vt.tiktok.com"
-      ].includes(url.hostname)
+    const phone = normalizePhone(req.body.phone);
+    const password = String(req.body.password || "");
+
+    if (password.length < 8 || password.length > 128) {
+      return res.status(400).json({
+        error: "Password must be at least 8 characters."
+      });
+    }
+
+    const existing = await pool.query(
+      "SELECT id FROM customer_users WHERE phone = $1",
+      [phone]
     );
-  } catch {
-    return false;
-  }
-}
 
-function adminOnly(req, res, next) {
-  const token = req.headers["x-admin-token"];
+    if (existing.rows.length) {
+      return res.status(409).json({
+        error: "An account already exists. Please log in."
+      });
+    }
 
-  if (!token || token !== process.env.ADMIN_SETUP_TOKEN) {
-    return res.status(401).json({
-      error: "Unauthorized admin access."
+    const salt = crypto.randomBytes(16).toString("hex");
+    const hash = await scrypt(password, salt, 64);
+
+    const saved = await pool.query(
+      `INSERT INTO customer_users (phone, password_hash, password_salt)
+       VALUES ($1, $2, $3)
+       RETURNING id, phone`,
+      [phone, hash.toString("hex"), salt]
+    );
+
+    const user = saved.rows[0];
+    await createCustomerSession(user.id, res);
+
+    res.status(201).json({
+      success: true,
+      message: "Your TIKGROW account has been created.",
+      user
     });
+  } catch (error) {
+    console.error("Registration error:", error.message);
+    res.status(400).json({ error: error.message || "Registration failed." });
   }
+});
 
-  next();
-}
+// CUSTOMER LOGIN
+app.post("/api/auth/login", async (req, res) => {
+  try {
+    const phone = normalizePhone(req.body.phone);
+    const password = String(req.body.password || "");
+
+    if (!password || password.length > 128) {
+      return res.status(401).json({ error: "Invalid phone number or password." });
+    }
+
+    const result = await pool.query(
+      `SELECT id, phone, password_hash, password_salt
+       FROM customer_users WHERE phone = $1`,
+      [phone]
+    );
+
+    if (!result.rows.length) {
+      return res.status(401).json({ error: "Invalid phone number or password." });
+    }
+
+    const user = result.rows[0];
+    const hash = await scrypt(password, user.password_salt, 64);
+    const expected = Buffer.from(user.password_hash, "hex");
+
+    if (
+      hash.length !== expected.length ||
+      !crypto.timingSafeEqual(hash, expected)
+    ) {
+      return res.status(401).json({ error: "Invalid phone number or password." });
+    }
+
+    await createCustomerSession(user.id, res);
+
+    res.json({
+      success: true,
+      message: "Login successful.",
+      user: { id: user.id, phone: user.phone }
+    });
+  } catch (error) {
+    console.error("Login error:", error.message);
+    res.status(400).json({ error: error.message || "Login failed." });
+  }
+});
+
+// CURRENT CUSTOMER
+app.get("/api/auth/me", async (req, res) => {
+  try {
+    const user = await getCustomer(req);
+
+    if (!user) {
+      return res.json({ authenticated: false });
+    }
+
+    res.json({ authenticated: true, user });
+  } catch (error) {
+    res.status(500).json({ error: "Could not check account." });
+  }
+});
+
+// CUSTOMER LOGOUT
+app.post("/api/auth/logout", async (req, res) => {
+  try {
+    const token = getCookie(req, "tg_session");
+
+    if (token) {
+      const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
+      await pool.query(
+        "DELETE FROM customer_sessions WHERE token_hash = $1",
+        [tokenHash]
+      );
+    }
+
+    clearSessionCookie(res);
+    res.json({ success: true, message: "You have logged out." });
+  } catch (error) {
+    res.status(500).json({ error: "Could not log out." });
+  }
+});
+
+// CUSTOMER ORDER HISTORY
+app.get("/api/customer/orders", async (req, res) => {
+  try {
+    const user = await getCustomer(req);
+
+    if (!user) {
+      return res.status(401).json({ error: "Please log in first." });
+    }
+
+    const result = await pool.query(
+      `SELECT order_code, service, quantity, price_ghs,
+              status, paid_at, created_at
+       FROM orders
+       WHERE user_id = $1
+       ORDER BY created_at DESC
+       LIMIT 100`,
+      [user.id]
+    );
+
+    res.json(result.rows.map(order => ({
+      ...order,
+      payment_status: order.paid_at ? "Paid" : "Not paid"
+    })));
+  } catch (error) {
+    console.error("History error:", error.message);
+    res.status(500).json({ error: "Could not load order history." });
+  }
+});
 
 // PAYSTACK VERIFICATION
 async function verifyPaystack(reference) {
   const response = await fetch(
-    "https://api.paystack.co/transaction/verify/" +
-      encodeURIComponent(reference),
+    "https://api.paystack.co/transaction/verify/" + encodeURIComponent(reference),
     {
       headers: {
         Authorization: "Bearer " + process.env.PAYSTACK_SECRET_KEY
@@ -172,8 +431,7 @@ async function confirmPayment(reference) {
   }
 
   const result = await pool.query(
-    `SELECT * FROM orders
-     WHERE payment_reference = $1`,
+    "SELECT * FROM orders WHERE payment_reference = $1",
     [reference]
   );
 
@@ -190,8 +448,7 @@ async function confirmPayment(reference) {
 
   await pool.query(
     `UPDATE orders
-     SET status = 'Paid',
-         paid_at = COALESCE(paid_at, NOW())
+     SET status = 'Paid', paid_at = COALESCE(paid_at, NOW())
      WHERE payment_reference = $1`,
     [reference]
   );
@@ -205,11 +462,7 @@ app.post("/api/paystack/webhook", async (req, res) => {
     const signature = req.headers["x-paystack-signature"];
     const rawBody = req.rawBody;
 
-    if (
-      !signature ||
-      !rawBody ||
-      !/^[0-9a-f]{128}$/i.test(signature)
-    ) {
+    if (!signature || !rawBody || !/^[0-9a-f]{128}$/i.test(signature)) {
       return res.sendStatus(401);
     }
 
@@ -229,11 +482,7 @@ app.post("/api/paystack/webhook", async (req, res) => {
 
     const event = req.body;
 
-    if (
-      event.event === "charge.success" &&
-      event.data &&
-      event.data.reference
-    ) {
+    if (event.event === "charge.success" && event.data?.reference) {
       await confirmPayment(event.data.reference);
     }
 
@@ -253,52 +502,38 @@ app.post("/api/orders", async (req, res) => {
     const quantity = Number(req.body.quantity);
 
     if (!contact || contact.length < 7 || contact.length > 20) {
-      return res.status(400).json({
-        error: "Enter a valid phone number."
-      });
+      return res.status(400).json({ error: "Enter a valid phone number." });
     }
 
     if (!validTikTokLink(link)) {
-      return res.status(400).json({
-        error: "Enter a valid TikTok link."
-      });
+      return res.status(400).json({ error: "Enter a valid TikTok link." });
     }
 
     if (!SERVICES.includes(service)) {
-      return res.status(400).json({
-        error: "Select a valid campaign service."
-      });
+      return res.status(400).json({ error: "Select a valid campaign service." });
     }
 
     const price = calculatePrice(service, quantity);
     const orderCode = makeOrderCode();
+    const user = await getCustomer(req);
 
     const saved = await pool.query(
       `INSERT INTO orders
        (order_code, customer_name, contact, service,
-        tiktok_link, details, quantity, price_ghs)
-       VALUES ($1, 'Customer', $2, $3, $4, $5, $6, $7)
+        tiktok_link, details, quantity, price_ghs, user_id)
+       VALUES ($1, 'Customer', $2, $3, $4, $5, $6, $7, $8)
        RETURNING order_code, service, quantity,
                  price_ghs, status, created_at`,
       [
-        orderCode,
-        contact,
-        service,
-        link,
-        "Campaign request",
-        quantity,
-        price
+        orderCode, contact, service, link,
+        "Campaign request", quantity, price, user?.id || null
       ]
     );
 
     res.status(201).json(saved.rows[0]);
-
   } catch (error) {
     console.error("Order error:", error.message);
-
-    res.status(400).json({
-      error: error.message || "Could not save order."
-    });
+    res.status(400).json({ error: error.message || "Could not save order." });
   }
 });
 
@@ -308,15 +543,12 @@ app.get("/api/orders/:code", async (req, res) => {
     const result = await pool.query(
       `SELECT order_code, service, quantity, price_ghs,
               status, paid_at, created_at
-       FROM orders
-       WHERE order_code = $1`,
+       FROM orders WHERE order_code = $1`,
       [req.params.code]
     );
 
     if (!result.rows.length) {
-      return res.status(404).json({
-        error: "Order not found."
-      });
+      return res.status(404).json({ error: "Order not found." });
     }
 
     const order = result.rows[0];
@@ -325,13 +557,9 @@ app.get("/api/orders/:code", async (req, res) => {
       ...order,
       payment_status: order.paid_at ? "Paid" : "Not paid"
     });
-
   } catch (error) {
     console.error("Tracking error:", error.message);
-
-    res.status(500).json({
-      error: "Could not check order."
-    });
+    res.status(500).json({ error: "Could not check order." });
   }
 });
 
@@ -339,43 +567,31 @@ app.get("/api/orders/:code", async (req, res) => {
 app.post("/api/orders/:code/pay", async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT * FROM orders WHERE order_code = $1`,
+      "SELECT * FROM orders WHERE order_code = $1",
       [req.params.code]
     );
 
     if (!result.rows.length) {
-      return res.status(404).json({
-        error: "Order not found."
-      });
+      return res.status(404).json({ error: "Order not found." });
     }
 
     const order = result.rows[0];
 
     if (order.paid_at) {
-      return res.status(400).json({
-        error: "This order has already been paid."
-      });
+      return res.status(400).json({ error: "This order has already been paid." });
     }
 
     if (Number(order.price_ghs) < 1) {
-      return res.status(400).json({
-        error: "The minimum online payment is GH₵1."
-      });
+      return res.status(400).json({ error: "The minimum online payment is GH₵1." });
     }
 
-    const reference =
-      "TIKGROW-" + crypto.randomBytes(12).toString("hex");
+    const reference = "TIKGROW-" + crypto.randomBytes(12).toString("hex");
 
     await pool.query(
-      `UPDATE orders
-       SET payment_reference = $1
-       WHERE id = $2`,
+      "UPDATE orders SET payment_reference = $1 WHERE id = $2",
       [reference, order.id]
     );
 
-    // Paystack requires an email.
-    // This generated address is not a working mailbox.
-    // Customer receipts will not reach this address.
     const digits = order.contact.replace(/\D/g, "");
     const email = digits + "@tikgrow-platform1.onrender.com";
 
@@ -393,22 +609,15 @@ app.post("/api/orders/:code/pay", async (req, res) => {
           currency: "GHS",
           reference,
           channels: ["card", "mobile_money"],
-          callback_url:
-            "https://tikgrow-platform1.onrender.com/payment-callback"
+          callback_url: "https://tikgrow-platform1.onrender.com/payment-callback"
         })
       }
     );
 
     const data = await response.json();
 
-    if (
-      !response.ok ||
-      !data.status ||
-      !data.data ||
-      !data.data.authorization_url
-    ) {
+    if (!response.ok || !data.status || !data.data?.authorization_url) {
       console.error("Paystack response:", data);
-
       return res.status(502).json({
         error: data.message || "Could not start payment."
       });
@@ -418,38 +627,26 @@ app.post("/api/orders/:code/pay", async (req, res) => {
       authorization_url: data.data.authorization_url,
       reference
     });
-
   } catch (error) {
     console.error("Payment setup error:", error.message);
-
-    res.status(500).json({
-      error: "Could not initialize payment."
-    });
+    res.status(500).json({ error: "Could not initialize payment." });
   }
 });
 
 // CUSTOMER RETURNS FROM PAYSTACK
 app.get("/payment-callback", async (req, res) => {
   try {
-    const reference = String(
-      req.query.reference || req.query.trxref || ""
-    );
+    const reference = String(req.query.reference || req.query.trxref || "");
 
-    if (!reference) {
-      return res.redirect("/?payment=missing");
-    }
+    if (!reference) return res.redirect("/?payment=missing");
 
     const orderCode = await confirmPayment(reference);
 
     return res.redirect(
-      "/track.html?order=" +
-      encodeURIComponent(orderCode) +
-      "&payment=success"
+      "/track.html?order=" + encodeURIComponent(orderCode) + "&payment=success"
     );
-
   } catch (error) {
     console.error("Payment callback error:", error.message);
-
     return res.redirect("/?payment=verify-failed");
   }
 });
@@ -458,47 +655,31 @@ app.get("/payment-callback", async (req, res) => {
 app.get("/api/admin/orders", adminOnly, async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT * FROM orders
-       ORDER BY created_at DESC
-       LIMIT 500`
+      "SELECT * FROM orders ORDER BY created_at DESC LIMIT 500"
     );
-
     res.json(result.rows);
-
   } catch (error) {
     console.error("Admin orders error:", error.message);
-
-    res.status(500).json({
-      error: "Could not load orders."
-    });
+    res.status(500).json({ error: "Could not load orders." });
   }
 });
 
 // ADMIN: UPDATE PROMOTION STATUS
-// Payment status can only be confirmed by Paystack verification.
 app.patch("/api/admin/orders/:id", adminOnly, async (req, res) => {
   try {
     const allowedStatuses = [
-      "New",
-      "Awaiting Payment",
-      "In Progress",
-      "Completed",
-      "Cancelled"
+      "New", "Awaiting Payment", "In Progress", "Completed", "Cancelled"
     ];
 
     const status = req.body.status;
 
     if (!allowedStatuses.includes(status)) {
-      return res.status(400).json({
-        error: "Invalid order status."
-      });
+      return res.status(400).json({ error: "Invalid order status." });
     }
 
     const result = await pool.query(
-      `UPDATE orders
-       SET status = $1
-       WHERE id = $2
-         AND paid_at IS NOT NULL
+      `UPDATE orders SET status = $1
+       WHERE id = $2 AND paid_at IS NOT NULL
        RETURNING id, order_code, status`,
       [status, req.params.id]
     );
@@ -510,25 +691,18 @@ app.patch("/api/admin/orders/:id", adminOnly, async (req, res) => {
     }
 
     res.json(result.rows[0]);
-
   } catch (error) {
     console.error("Admin update error:", error.message);
-
-    res.status(500).json({
-      error: "Could not update order."
-    });
+    res.status(500).json({ error: "Could not update order." });
   }
 });
 
 // HEALTH CHECK
 app.get("/api/health", (req, res) => {
-  res.json({
-    status: "ok",
-    message: "TIKGROW is online"
-  });
+  res.json({ status: "ok", message: "TIKGROW is online" });
 });
 
-// CUSTOMER HOMEPAGE
+// HOMEPAGE
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "index.html"));
 });
@@ -562,3 +736,6 @@ initializeDatabase()
     console.error("Database initialization failed:", error);
     process.exit(1);
   });
+
+
+
