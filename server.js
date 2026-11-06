@@ -1,527 +1,165 @@
 
 
-const express = require("express");
-const { Pool } = require("pg");
-const path = require("path");
-const crypto = require("crypto");
 
-const app = express();
-const PORT = process.env.PORT || 3000;
-const BASE_URL = "https://tikgrow-platform1.onrender.com";
-
-if (
-  !process.env.DATABASE_URL ||
-  !process.env.ADMIN_SETUP_TOKEN ||
-  !process.env.PAYSTACK_SECRET_KEY
-) {
-  console.error("Missing required environment variables.");
-  process.exit(1);
-}
-
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false }
-});
-
-const services = [
-  "TikTok Likes",
-  "Video Views",
-  "Followers",
-  "LIVE Promotion",
-  "Shares",
-  "Comments"
-];
-
-app.use(express.json({
-  limit: "20kb",
-  verify: (req, res, buffer) => {
-    req.rawBody = buffer;
-  }
-}));
-
-app.use(express.static(__dirname));
-
-async function setupDatabase() {
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS orders (
-      id SERIAL PRIMARY KEY,
-      order_code TEXT UNIQUE NOT NULL,
-      customer_name TEXT NOT NULL DEFAULT 'Customer',
-      contact TEXT NOT NULL,
-      service TEXT NOT NULL,
-      tiktok_link TEXT NOT NULL,
-      details TEXT DEFAULT '',
-      status TEXT DEFAULT 'New',
-      created_at TIMESTAMPTZ DEFAULT NOW()
-    )
-  `);
-
-  await pool.query(`
-    ALTER TABLE orders
-    ADD COLUMN IF NOT EXISTS price_ghs NUMERIC(10,2),
-    ADD COLUMN IF NOT EXISTS payment_reference TEXT UNIQUE,
-    ADD COLUMN IF NOT EXISTS paid_at TIMESTAMPTZ
-  `);
-}
-
-function adminOnly(req, res, next) {
-  const token = req.get("x-admin-token") || "";
-  const expected = process.env.ADMIN_SETUP_TOKEN;
-
-  const a = Buffer.from(token);
-  const b = Buffer.from(expected);
-
-  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
-    return res.status(401).json({
-      success: false,
-      message: "Access denied"
-    });
-  }
-
-  next();
-}
-
-async function verifyPaystack(reference) {
-  const response = await fetch(
-    "https://api.paystack.co/transaction/verify/" +
-    encodeURIComponent(reference),
-    {
-      headers: {
-        Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`
-      }
-    }
-  );
-
-  const result = await response.json();
-
-  if (!response.ok || !result.status) {
-    throw new Error("Paystack verification failed");
-  }
-
-  return result.data;
-}
-
-async function confirmPayment(reference) {
-  const orderResult = await pool.query(
-    "SELECT * FROM orders WHERE payment_reference=$1",
-    [reference]
-  );
-
-  if (!orderResult.rowCount) return null;
-
-  const order = orderResult.rows[0];
-  const payment = await verifyPaystack(reference);
-
-  const expectedAmount = Math.round(Number(order.price_ghs) * 100);
-
-  if (
-    payment.status !== "success" ||
-    payment.currency !== "GHS" ||
-    Number(payment.amount) !== expectedAmount
-  ) {
-    return order;
-  }
-
-  await pool.query(
-    `UPDATE orders
-     SET status='Paid', paid_at=COALESCE(paid_at,NOW())
-     WHERE id=$1`,
-    [order.id]
-  );
-
-  const updated = await pool.query(
-    "SELECT * FROM orders WHERE id=$1",
-    [order.id]
-  );
-
-  return updated.rows[0];
-}
-
-app.get("/api/health", async (req, res) => {
-  try {
-    await pool.query("SELECT 1");
-    res.json({
-      success: true,
-      message: "TIKGROW is online"
-    });
-  } catch {
-    res.status(500).json({
-      success: false,
-      message: "Database error"
-    });
-  }
-});
-
-// CUSTOMER: CREATE ORDER
-app.post("/api/orders", async (req, res) => {
-  try {
-    const { contact, service, link, details = "" } = req.body || {};
-
-    if (!contact || !service || !link) {
-      return res.status(400).json({
-        success: false,
-        message: "Enter your phone number, service and TikTok link."
-      });
-    }
-
-    if (!services.includes(service)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid service."
-      });
-    }
-
-    const phone = String(contact).trim();
-
-    if (!/^\+?[0-9\s-]{7,20}$/.test(phone)) {
-      return res.status(400).json({
-        success: false,
-        message: "Enter a valid phone number."
-      });
-    }
-
-    let url;
-
-    try {
-      url = new URL(link);
-    } catch {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid TikTok link."
-      });
-    }
-
-    if (
-      url.hostname !== "tiktok.com" &&
-      !url.hostname.endsWith(".tiktok.com")
-    ) {
-      return res.status(400).json({
-        success: false,
-        message: "Enter a TikTok link."
-      });
-    }
-
-    const code =
-      "TG-" + crypto.randomBytes(5).toString("hex").toUpperCase();
-
-    const result = await pool.query(
-      `INSERT INTO orders
-       (order_code, customer_name, contact, service, tiktok_link, details)
-       VALUES ($1,'Customer',$2,$3,$4,$5)
-       RETURNING order_code, service, status, created_at`,
-      [
-        code,
-        phone.slice(0, 40),
-        service,
-        url.toString().slice(0, 500),
-        String(details).slice(0, 1000)
-      ]
-    );
-
-    res.status(201).json({
-      success: true,
-      message: "Order received.",
-      order: result.rows[0]
-    });
-  } catch (error) {
-    console.error("Order error:", error.message);
-    res.status(500).json({
-      success: false,
-      message: "Unable to save order."
-    });
-  }
-});
-
-// CUSTOMER: TRACK ORDER
-app.get("/api/orders/:code", async (req, res) => {
-  try {
-    const result = await pool.query(
-      `SELECT order_code, service, details, status,
-              price_ghs, created_at, paid_at
-       FROM orders WHERE order_code=$1`,
-      [req.params.code.toUpperCase()]
-    );
-
-    if (!result.rowCount) {
-      return res.status(404).json({
-        success: false,
-        message: "Order not found."
-      });
-    }
-
-    res.json({
-      success: true,
-      order: result.rows[0]
-    });
-  } catch {
-    res.status(500).json({
-      success: false,
-      message: "Could not track order."
-    });
-  }
-});
-
-// CUSTOMER: START PAYSTACK CHECKOUT
-app.post("/api/orders/:code/pay", async (req, res) => {
-  try {
-    const result = await pool.query(
-      "SELECT * FROM orders WHERE order_code=$1",
-      [req.params.code.toUpperCase()]
-    );
-
-    if (!result.rowCount) {
-      return res.status(404).json({
-        success: false,
-        message: "Order not found."
-      });
-    }
-
-    const order = result.rows[0];
-
-    if (order.status === "Paid" || order.paid_at) {
-      return res.status(400).json({
-        success: false,
-        message: "This order has already been paid."
-      });
-    }
-
-    if (!order.price_ghs || Number(order.price_ghs) <= 0) {
-      return res.status(400).json({
-        success: false,
-        message: "Your order is waiting for a price."
-      });
-    }
-
-    const reference =
-      "TG" + crypto.randomBytes(12).toString("hex");
-
-    await pool.query(
-      "UPDATE orders SET payment_reference=$1 WHERE id=$2",
-      [reference, order.id]
-    );
-
-    const phoneDigits = order.contact.replace(/\D/g, "");
-
-    const generatedEmail =
-      phoneDigits + "@tikgrow-platform1.onrender.com";
-
-    const response = await fetch(
-      "https://api.paystack.co/transaction/initialize",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          email: generatedEmail,
-          amount: String(Math.round(Number(order.price_ghs) * 100)),
-          currency: "GHS",
-          reference,
-          channels: ["card", "mobile_money"],
-          callback_url: BASE_URL + "/api/paystack/callback",
-          metadata: {
-            order_code: order.order_code,
-            phone: order.contact,
-            service: order.service
-          }
-        })
-      }
-    );
-
-    const data = await response.json();
-
-    if (!response.ok || !data.status) {
-      throw new Error(data.message || "Could not start payment.");
-    }
-
-    res.json({
-      success: true,
-      checkout_url: data.data.authorization_url
-    });
-  } catch (error) {
-    console.error("Payment error:", error.message);
-    res.status(500).json({
-      success: false,
-      message: "Could not start payment. Please try again."
-    });
-  }
-});
-
-// PAYSTACK: CUSTOMER RETURN
-app.get("/api/paystack/callback", async (req, res) => {
-  try {
-    const reference = String(req.query.reference || "");
-
-    if (!reference) {
-      return res.redirect("/track.html?payment=unknown");
-    }
-
-    const orderResult = await pool.query(
-      "SELECT order_code FROM orders WHERE payment_reference=$1",
-      [reference]
-    );
-
-    if (!orderResult.rowCount) {
-      return res.redirect("/track.html?payment=unknown");
-    }
-
-    const orderCode = orderResult.rows[0].order_code;
-
-    await confirmPayment(reference);
-
-    res.redirect(
-      "/track.html?order=" +
-      encodeURIComponent(orderCode) +
-      "&payment=checked"
-    );
-  } catch (error) {
-    console.error("Callback error:", error.message);
-    res.redirect("/track.html?payment=checking");
-  }
-});
-
-// PAYSTACK: WEBHOOK (IMPORTANT FOR MOBILE MONEY)
-app.post("/api/paystack/webhook", async (req, res) => {
-  try {
-    const signature = req.get("x-paystack-signature") || "";
-
-    const expected = crypto
-      .createHmac("sha512", process.env.PAYSTACK_SECRET_KEY)
-      .update(req.rawBody || Buffer.from(""))
-      .digest("hex");
-
-    const a = Buffer.from(signature);
-    const b = Buffer.from(expected);
-
-    if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
-      return res.sendStatus(401);
-    }
-
-    if (req.body.event === "charge.success") {
-      const reference = req.body.data.reference;
-      await confirmPayment(reference);
-    }
-
-    res.sendStatus(200);
-  } catch (error) {
-    console.error("Webhook error:", error.message);
-    res.sendStatus(500);
-  }
-});
-
-// ADMIN: VIEW ORDERS
-app.get("/api/admin/orders", adminOnly, async (req, res) => {
-  try {
-    const result = await pool.query(
-      "SELECT * FROM orders ORDER BY created_at DESC LIMIT 200"
-    );
-
-    res.json({
-      success: true,
-      orders: result.rows
-    });
-  } catch {
-    res.status(500).json({
-      success: false,
-      message: "Could not load orders."
-    });
-  }
-});
-
-// ADMIN: SET ORDER PRICE
-app.patch("/api/admin/orders/:id/price", adminOnly, async (req, res) => {
-  const price = Number(req.body.price_ghs);
-
-  if (!Number.isFinite(price) || price <= 0 || price > 1000000) {
-    return res.status(400).json({
-      success: false,
-      message: "Enter a valid price in GHS."
-    });
-  }
-
-  try {
-    const result = await pool.query(
-      `UPDATE orders SET price_ghs=$1
-       WHERE id=$2 AND status <> 'Paid'
-       RETURNING id, order_code, price_ghs, status`,
-      [price.toFixed(2), req.params.id]
-    );
-
-    if (!result.rowCount) {
-      return res.status(404).json({
-        success: false,
-        message: "Order not found or already paid."
-      });
-    }
-
-    res.json({
-      success: true,
-      order: result.rows[0]
-    });
-  } catch {
-    res.status(500).json({
-      success: false,
-      message: "Could not set price."
-    });
-  }
-});
-
-// ADMIN: UPDATE PROMOTION STATUS
-app.patch("/api/admin/orders/:id", adminOnly, async (req, res) => {
-  const statuses = [
-    "New",
-    "Awaiting Payment",
-    "In Progress",
-    "Completed",
-    "Cancelled"
-  ];
-
-  if (!statuses.includes(req.body.status)) {
-    return res.status(400).json({
-      success: false,
-      message: "Invalid status. Payment status is verified automatically."
-    });
-  }
-
-  try {
-    const result = await pool.query(
-      `UPDATE orders SET status=$1
-       WHERE id=$2 AND status <> 'Paid'
-       RETURNING id, order_code, status`,
-      [req.body.status, req.params.id]
-    );
-
-    if (!result.rowCount) {
-      return res.status(404).json({
-        success: false,
-        message: "Order not found or already paid."
-      });
-    }
-
-    res.json({
-      success: true,
-      order: result.rows[0]
-    });
-  } catch {
-    res.status(500).json({
-      success: false,
-      message: "Update failed."
-    });
-  }
-});
-
-app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "index.html"));
-});
-
-setupDatabase()
-  .then(() => {
-    app.listen(PORT, () => {
-      console.log("TIKGROW running on " + PORT);
-    });
-  })
-  .catch(error => {
-    console.error("Database setup failed:", error.message);
-    process.exit(1);
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TIKGROW | TikTok Promotion</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#08090d;color:white;font-family:Arial,sans-serif}
+header{padding:22px 18px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #242631}
+.logo{font-size:27px;font-weight:900;letter-spacing:1px}
+.logo span{color:#25f4ee}
+.tag{color:#aaa;font-size:12px}
+.hero{text-align:center;padding:48px 20px 30px;background:radial-gradient(ellipse at top,#123c48 0%,#08090d 70%)}
+.hero h1{font-size:38px;margin:8px 0}
+.hero h1 span{color:#25f4ee}
+.hero p{color:#b8bbc7;line-height:1.6}
+.pill{display:inline-block;padding:8px 14px;border:1px solid #25f4ee;border-radius:30px;color:#25f4ee;font-size:12px}
+.container{max-width:650px;margin:auto;padding:20px}
+h2{font-size:22px}
+.services{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.service{background:#151720;border:1px solid #303341;border-radius:15px;padding:18px 12px;text-align:center}
+.service strong{display:block;margin:9px 0}
+.service small{color:#a8abba}
+form,.panel{background:#151720;border:1px solid #303341;border-radius:18px;padding:20px;margin-top:22px}
+label{display:block;margin:15px 0 7px;color:#d5d7df;font-size:13px}
+input,select,textarea{width:100%;padding:14px;border-radius:10px;border:1px solid #3b3e4b;background:#090b11;color:white;font-size:15px}
+button{width:100%;padding:16px;border:0;border-radius:11px;background:linear-gradient(90deg,#25f4ee,#168cba);color:#061014;font-size:16px;font-weight:900;margin-top:20px}
+button:disabled{opacity:.5}
+.note{font-size:12px;color:#a7aaba;line-height:1.6}
+.status{margin-top:15px;padding:12px;border-radius:10px;background:#202633;line-height:1.5;overflow-wrap:anywhere}
+a{color:#25f4ee}
+footer{text-align:center;padding:30px;color:#858999;font-size:12px}
+</style>
+</head>
+<body>
+<header>
+ <div class="logo">TIK<span>GROW</span></div>
+ <div class="tag">PROMOTION MARKETPLACE</div>
+</header>
+
+<section class="hero">
+ <div class="pill">GROW YOUR TIKTOK PRESENCE</div>
+ <h1>Make Your Content<br><span>Get Noticed.</span></h1>
+ <p>Choose a promotion service and submit your TikTok campaign request.</p>
+</section>
+
+<main class="container">
+ <h2>Our Services</h2>
+ <div class="services">
+  <div class="service">❤️<strong>TikTok Likes</strong><small>Likes campaign requests</small></div>
+  <div class="service">▶️<strong>Video Views</strong><small>Video visibility campaigns</small></div>
+  <div class="service">👥<strong>Followers</strong><small>Audience growth campaigns</small></div>
+  <div class="service">🔴<strong>LIVE Promotion</strong><small>Promote your live session</small></div>
+  <div class="service">↗️<strong>Shares</strong><small>Share campaign requests</small></div>
+  <div class="service">💬<strong>Comments</strong><small>Comment campaign requests</small></div>
+ </div>
+
+ <form id="orderForm">
+  <h2>Start Your Campaign</h2>
+  <label>Phone Number</label>
+  <input name="contact" type="tel" placeholder="0240000000" required>
+  <label>TikTok Video or Profile Link</label>
+  <input name="link" type="url" placeholder="https://www.tiktok.com/@username" required>
+  <label>Select Service</label>
+  <select name="service" required>
+   <option value="">Choose a service</option>
+   <option>TikTok Likes</option>
+   <option>Video Views</option>
+   <option>Followers</option>
+   <option>LIVE Promotion</option>
+   <option>Shares</option>
+   <option>Comments</option>
+  </select>
+  <label>Quantity / Campaign Package</label>
+  <input name="quantity" placeholder="e.g. 1000 or Premium campaign" required>
+  <label>Instructions (optional)</label>
+  <textarea name="notes" rows="3" placeholder="Additional campaign details"></textarea>
+  <button id="submitBtn" type="submit">SUBMIT ORDER</button>
+  <p class="note">No TikTok password is required. Never share your TikTok password with anyone.</p>
+  <div id="result" class="status" hidden></div>
+ </form>
+
+ <section class="panel">
+  <h2>Track Your Order</h2>
+  <p class="note">Already placed an order? Enter your order ID to check its status and payment details.</p>
+  <input id="trackCode" placeholder="Example: TG-XXXXXXXXXX">
+  <button type="button" onclick="trackOrder()">TRACK ORDER</button>
+  <div id="trackingResult" class="status" hidden></div>
+ </section>
+</main>
+
+<footer>© 2026 TIKGROW · Independent promotion marketplace · Not affiliated with TikTok.</footer>
+
+<script>
+const form=document.getElementById("orderForm");
+const result=document.getElementById("result");
+const submitBtn=document.getElementById("submitBtn");
+
+form.addEventListener("submit",async function(e){
+ e.preventDefault();
+ submitBtn.disabled=true;
+ submitBtn.textContent="SUBMITTING...";
+ result.hidden=false;
+ result.textContent="Saving your order...";
+ const data=new FormData(form);
+ try{
+  const response=await fetch("/api/orders",{
+   method:"POST",
+   headers:{"Content-Type":"application/json"},
+   body:JSON.stringify({
+    contact:data.get("contact"),
+    link:data.get("link"),
+    service:data.get("service"),
+    details:"Quantity: "+data.get("quantity")+"\nInstructions: "+(data.get("notes")||"None")
+   })
   });
+  const answer=await response.json();
+  if(!response.ok) throw new Error(answer.error||"Could not save order");
+  result.innerHTML="Order submitted successfully!<br><b>Order ID: "+answer.order_code+"</b><br>Save this ID to track your order.";
+  form.reset();
+ }catch(error){
+  result.textContent=error.message;
+ }
+ submitBtn.disabled=false;
+ submitBtn.textContent="SUBMIT ORDER";
+});
+
+async function trackOrder(){
+ const code=document.getElementById("trackCode").value.trim();
+ const box=document.getElementById("trackingResult");
+ box.hidden=false;
+ if(!code){box.textContent="Enter your order ID.";return;}
+ box.textContent="Checking order...";
+ try{
+  const response=await fetch("/api/orders/"+encodeURIComponent(code));
+  const data=await response.json();
+  if(!response.ok) throw new Error(data.error||"Order not found");
+  box.textContent="Order: "+data.order_code+" | Status: "+data.status+" | Payment: "+(data.payment_status||"Not paid")+(data.price_ghs?" | Amount: GH₵"+data.price_ghs:"");
+  if(data.payment_status!=="Paid" && data.price_ghs>0){
+   const button=document.createElement("button");
+   button.textContent="PAY GH₵"+data.price_ghs;
+   button.onclick=()=>payOrder(data.order_code);
+   box.appendChild(button);
+  }
+ }catch(error){box.textContent=error.message;}
+}
+
+async function payOrder(code){
+ const box=document.getElementById("trackingResult");
+ box.textContent="Preparing secure Paystack checkout...";
+ try{
+  const response=await fetch("/api/orders/"+encodeURIComponent(code)+"/pay",{method:"POST"});
+  const data=await response.json();
+  if(!response.ok) throw new Error(data.error||"Payment could not start");
+  if(!data.authorization_url) throw new Error("Payment link was not returned.");
+  window.location.href=data.authorization_url;
+ }catch(error){box.textContent=error.message;}
+}
+</script>
+</body>
+</html>
