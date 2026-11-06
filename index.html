@@ -1,20 +1,18 @@
 
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="theme-color" content="#10091f">
-<title>SavCel Hub | Everything in One Place</title>
-<meta name="description" content="Shop products, data bundles, phone numbers and digital services at SavCel Hub.">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0c0815">
+<title>SavCel Hub | Premium Digital Marketplace</title>
+<meta name="description" content="Shop products, data bundles, international numbers and digital services at SavCel Hub.">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
 <style>
-:root{
+:root {
   --bg:#0c0815;
   --panel:#171126;
   --panel2:#211735;
@@ -24,191 +22,467 @@
   --muted:#aaa2bc;
   --line:rgba(255,255,255,.09);
 }
-*{box-sizing:border-box;margin:0;padding:0}
-body{
+
+* {
+  box-sizing:border-box;
+  margin:0;
+  padding:0;
+}
+
+body {
   background:var(--bg);
   color:var(--white);
   font-family:'DM Sans',sans-serif;
 }
-a{text-decoration:none;color:inherit}
-button{font:inherit;cursor:pointer}
-.container{width:min(1180px,92%);margin:auto}
-header{
-  position:sticky;top:0;z-index:20;
-  background:rgba(12,8,21,.94);
+
+a {
+  text-decoration:none;
+  color:inherit;
+}
+
+button {
+  font:inherit;
+  cursor:pointer;
+}
+
+.container {
+  width:min(1180px,92%);
+  margin:auto;
+}
+
+header {
+  position:sticky;
+  top:0;
+  z-index:20;
+  background:rgba(12,8,21,.96);
   backdrop-filter:blur(18px);
   border-bottom:1px solid var(--line);
 }
-.nav{
-  height:76px;display:flex;align-items:center;
-  justify-content:space-between;gap:15px;
+
+.nav {
+  min-height:76px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:15px;
 }
-.logo{font-size:23px;font-weight:800;letter-spacing:-1px}
-.logo span{color:#8b5cf6}
-.navlinks{display:flex;gap:25px;color:#c9c2d6;font-size:13px}
-.navlinks a:hover{color:#fff}
-.actions{display:flex;align-items:center;gap:10px}
-.btn{
-  border:0;border-radius:12px;padding:12px 17px;
-  font-weight:700;font-size:12px;
+
+.logo {
+  font-size:23px;
+  font-weight:800;
+  letter-spacing:-1px;
 }
-.btn-primary{
+
+.logo span {
+  color:var(--purple);
+}
+
+.navlinks {
+  display:flex;
+  gap:25px;
+  color:#c9c2d6;
+  font-size:13px;
+}
+
+.navlinks a:hover {
+  color:white;
+}
+
+.actions {
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+
+.btn {
+  display:inline-flex;
+  justify-content:center;
+  align-items:center;
+  border:0;
+  border-radius:12px;
+  padding:12px 17px;
+  font-weight:700;
+  font-size:12px;
+  cursor:pointer;
+}
+
+.btn-primary {
   color:white;
   background:linear-gradient(110deg,#7545e8,#258cff);
   box-shadow:0 7px 25px #582bd544;
 }
-.btn-outline{
-  background:transparent;border:1px solid var(--line);color:white;
+
+.btn-outline {
+  background:transparent;
+  border:1px solid var(--line);
+  color:white;
 }
-.hero{
+
+.hero {
   padding:78px 0 55px;
   background:
-  radial-gradient(ellipse at 85% 15%,#35216b88,transparent 38%),
-  radial-gradient(ellipse at 5% 70%,#124f8a44,transparent 40%);
+    radial-gradient(ellipse at 85% 15%,#35216b88,transparent 38%),
+    radial-gradient(ellipse at 5% 70%,#124f8a44,transparent 40%);
 }
-.hero-grid{
-  display:grid;grid-template-columns:1.15fr .85fr;
-  gap:35px;align-items:center;
+
+.hero-grid {
+  display:grid;
+  grid-template-columns:1.15fr .85fr;
+  gap:35px;
+  align-items:center;
 }
-.eyebrow{
-  color:#a78bfa;font-size:11px;font-weight:800;
-  letter-spacing:3px;text-transform:uppercase;
+
+.eyebrow {
+  color:#a78bfa;
+  font-size:11px;
+  font-weight:800;
+  letter-spacing:3px;
+  text-transform:uppercase;
   margin-bottom:19px;
 }
-h1{
+
+h1 {
   font-family:Manrope,sans-serif;
   font-size:clamp(42px,6vw,70px);
-  line-height:1.08;letter-spacing:-3px;
+  line-height:1.08;
+  letter-spacing:-3px;
   max-width:690px;
 }
-h1 span{
+
+h1 span {
   background:linear-gradient(90deg,#a78bfa,#38a5ff);
-  -webkit-background-clip:text;background-clip:text;color:transparent;
+  -webkit-background-clip:text;
+  background-clip:text;
+  color:transparent;
 }
-.hero-text{
-  color:var(--muted);line-height:1.8;
-  max-width:490px;margin:22px 0 28px;font-size:15px;
+
+.hero-text {
+  color:var(--muted);
+  line-height:1.8;
+  max-width:490px;
+  margin:22px 0 28px;
+  font-size:15px;
 }
-.hero-buttons{display:flex;gap:12px;flex-wrap:wrap}
-.hero-art{
-  min-height:340px;border:1px solid #ffffff17;
-  border-radius:28px;overflow:hidden;position:relative;
+
+.hero-buttons {
+  display:flex;
+  gap:12px;
+  flex-wrap:wrap;
+}
+
+.hero-art {
+  min-height:340px;
+  border:1px solid #ffffff17;
+  border-radius:28px;
+  overflow:hidden;
+  position:relative;
   background:
-  radial-gradient(circle at 50% 40%,#7545e8aa,transparent 50%),
-  linear-gradient(140deg,#241344,#101a38);
-  display:flex;align-items:center;justify-content:center;
+    radial-gradient(circle at 50% 40%,#7545e8aa,transparent 50%),
+    linear-gradient(140deg,#241344,#101a38);
+  display:flex;
+  align-items:center;
+  justify-content:center;
 }
-.hero-art img{
-  width:100%;height:340px;object-fit:cover;
-  opacity:.72;mix-blend-mode:screen;
+
+.hero-art img {
+  width:100%;
+  height:340px;
+  object-fit:cover;
+  opacity:.72;
+  mix-blend-mode:screen;
 }
-.art-label{
-  position:absolute;bottom:22px;left:22px;
-  background:#10091edb;border:1px solid var(--line);
-  padding:13px 17px;border-radius:13px;
-  font-size:12px;font-weight:700;
+
+.art-label {
+  position:absolute;
+  bottom:22px;
+  left:22px;
+  background:#10091edb;
+  border:1px solid var(--line);
+  padding:13px 17px;
+  border-radius:13px;
+  font-size:12px;
+  font-weight:700;
 }
-.stats{
-  display:grid;grid-template-columns:repeat(3,1fr);
-  gap:12px;margin-top:45px;
+
+.stats {
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:12px;
+  margin-top:45px;
 }
-.stat{
-  border-top:1px solid var(--line);padding-top:16px;
+
+.stat {
+  border-top:1px solid var(--line);
+  padding-top:16px;
 }
-.stat strong{display:block;font-size:21px}
-.stat small{color:var(--muted);font-size:11px}
-section{padding:55px 0}
-.section-head{
-  display:flex;align-items:end;justify-content:space-between;
-  gap:15px;margin-bottom:25px;
+
+.stat strong {
+  display:block;
+  font-size:21px;
 }
-.section-head h2{font-size:26px;letter-spacing:-1px}
-.section-head p{color:var(--muted);font-size:12px;margin-top:7px}
-.view-link{font-size:12px;color:#9e8bff;font-weight:700}
-.categories{
-  display:grid;grid-template-columns:repeat(4,1fr);gap:15px;
+
+.stat small {
+  color:var(--muted);
+  font-size:11px;
 }
-.category{
-  padding:23px 17px;border:1px solid var(--line);
-  border-radius:18px;background:linear-gradient(145deg,#211735,#130e20);
+
+section {
+  padding:55px 0;
+}
+
+.section-head {
+  display:flex;
+  align-items:end;
+  justify-content:space-between;
+  gap:15px;
+  margin-bottom:25px;
+}
+
+.section-head h2 {
+  font-size:26px;
+  letter-spacing:-1px;
+}
+
+.section-head p {
+  color:var(--muted);
+  font-size:12px;
+  margin-top:7px;
+}
+
+.view-link {
+  font-size:12px;
+  color:#9e8bff;
+  font-weight:700;
+}
+
+.categories {
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:15px;
+}
+
+.category {
+  padding:23px 17px;
+  border:1px solid var(--line);
+  border-radius:18px;
+  background:linear-gradient(145deg,#211735,#130e20);
   transition:.2s;
 }
-.category:hover,.product:hover{transform:translateY(-4px);border-color:#7958d8}
-.category-icon{
-  width:49px;height:49px;border-radius:14px;
-  background:#ffffff0e;display:grid;place-items:center;
-  font-size:24px;margin-bottom:19px;
+
+.category:hover,
+.product:hover {
+  transform:translateY(-4px);
+  border-color:#7958d8;
 }
-.category h3{font-size:15px;margin-bottom:6px}
-.category p{color:var(--muted);font-size:11px;line-height:1.6}
-.products{
-  display:grid;grid-template-columns:repeat(4,1fr);gap:15px;
+
+.category-icon {
+  width:49px;
+  height:49px;
+  border-radius:14px;
+  background:#ffffff0e;
+  display:grid;
+  place-items:center;
+  font-size:24px;
+  margin-bottom:19px;
 }
-.product{
-  border:1px solid var(--line);border-radius:18px;
-  overflow:hidden;background:#171126;transition:.2s;
+
+.category h3 {
+  font-size:15px;
+  margin-bottom:6px;
 }
-.product img{
-  display:block;width:100%;height:185px;object-fit:cover;
+
+.category p {
+  color:var(--muted);
+  font-size:11px;
+  line-height:1.6;
+}
+
+.products {
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:15px;
+}
+
+.product {
+  border:1px solid var(--line);
+  border-radius:18px;
+  overflow:hidden;
+  background:#171126;
+  transition:.2s;
+}
+
+.product img {
+  display:block;
+  width:100%;
+  height:185px;
+  object-fit:cover;
   background:#211735;
 }
-.product-info{padding:16px}
-.product-tag{
-  color:#a78bfa;font-size:9px;font-weight:800;
-  text-transform:uppercase;letter-spacing:1.3px;
+
+.product-info {
+  padding:16px;
 }
-.product h3{font-size:14px;margin:8px 0}
-.product p{font-size:11px;color:var(--muted);line-height:1.6}
-.product-bottom{
-  display:flex;justify-content:space-between;
-  align-items:center;margin-top:14px;
+
+.product-tag {
+  color:#a78bfa;
+  font-size:9px;
+  font-weight:800;
+  text-transform:uppercase;
+  letter-spacing:1.3px;
 }
-.price{font-size:14px;font-weight:800}
-.add{
-  border:0;border-radius:9px;background:#7545e8;
-  color:white;padding:9px 12px;font-size:11px;font-weight:700;
+
+.product h3 {
+  font-size:14px;
+  margin:8px 0;
 }
-.promo{
-  border:1px solid #7451d455;border-radius:24px;
-  padding:35px;background:
-  radial-gradient(circle at 90% 20%,#2866c755,transparent 40%),
-  linear-gradient(120deg,#251541,#131c37);
-  display:flex;justify-content:space-between;
-  align-items:center;gap:25px;
+
+.product p {
+  font-size:11px;
+  color:var(--muted);
+  line-height:1.6;
 }
-.promo h2{font-size:28px;margin:10px 0}
-.promo p{color:#c0b8d1;font-size:13px;line-height:1.7;max-width:480px}
-.promo .btn{margin-top:19px}
-footer{
+
+.product-bottom {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-top:14px;
+}
+
+.price {
+  font-size:14px;
+  font-weight:800;
+}
+
+.promo {
+  border:1px solid #7451d455;
+  border-radius:24px;
+  padding:35px;
+  background:
+    radial-gradient(circle at 90% 20%,#2866c755,transparent 40%),
+    linear-gradient(120deg,#251541,#131c37);
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:25px;
+}
+
+.promo h2 {
+  font-size:28px;
+  margin:10px 0;
+}
+
+.promo p {
+  color:#c0b8d1;
+  font-size:13px;
+  line-height:1.7;
+  max-width:480px;
+}
+
+.promo .btn {
+  margin-top:19px;
+}
+
+footer {
   border-top:1px solid var(--line);
-  padding:35px 0;color:var(--muted);font-size:11px;
+  padding:35px 0;
+  color:var(--muted);
+  font-size:11px;
 }
-.footer-row{
-  display:flex;justify-content:space-between;gap:20px;
-  flex-wrap:wrap;align-items:center;
+
+.footer-row {
+  display:flex;
+  justify-content:space-between;
+  gap:20px;
+  flex-wrap:wrap;
+  align-items:center;
 }
-.mobile-note{display:none}
-@media(max-width:850px){
-  .navlinks{display:none}
-  .hero-grid{grid-template-columns:1fr}
-  .hero-art{min-height:240px}
-  .hero-art img{height:240px}
-  .categories{grid-template-columns:repeat(2,1fr)}
-  .products{grid-template-columns:repeat(2,1fr)}
+
+#accountMessage {
+  color:#c5b4ff;
+  font-size:12px;
 }
-@media(max-width:480px){
-  .nav{height:66px}
-  .logo{font-size:20px}
-  .actions .btn{padding:10px 12px}
-  .hero{padding:55px 0 35px}
-  h1{letter-spacing:-2px}
-  .stats{gap:8px}
-  .stat strong{font-size:17px}
-  section{padding:40px 0}
-  .section-head h2{font-size:22px}
-  .product img{height:140px}
-  .product-info{padding:12px}
-  .promo{padding:25px;display:block}
+
+@media(max-width:850px) {
+  .navlinks {
+    display:none;
+  }
+
+  .hero-grid {
+    grid-template-columns:1fr;
+  }
+
+  .hero-art {
+    min-height:240px;
+  }
+
+  .hero-art img {
+    height:240px;
+  }
+
+  .categories {
+    grid-template-columns:repeat(2,1fr);
+  }
+
+  .products {
+    grid-template-columns:repeat(2,1fr);
+  }
+}
+
+@media(max-width:480px) {
+  .nav {
+    min-height:66px;
+  }
+
+  .logo {
+    font-size:20px;
+  }
+
+  .actions {
+    gap:6px;
+  }
+
+  .actions .btn {
+    padding:10px 9px;
+    font-size:10px;
+  }
+
+  .hero {
+    padding:55px 0 35px;
+  }
+
+  h1 {
+    letter-spacing:-2px;
+  }
+
+  .stats {
+    gap:8px;
+  }
+
+  .stat strong {
+    font-size:17px;
+  }
+
+  section {
+    padding:40px 0;
+  }
+
+  .section-head h2 {
+    font-size:22px;
+  }
+
+  .product img {
+    height:140px;
+  }
+
+  .product-info {
+    padding:12px;
+  }
+
+  .promo {
+    padding:25px;
+    display:block;
+  }
 }
 </style>
 </head>
@@ -217,6 +491,7 @@ footer{
 
 <header>
   <div class="container nav">
+
     <a href="/" class="logo">SavCel<span>Hub.</span></a>
 
     <nav class="navlinks">
@@ -226,19 +501,26 @@ footer{
       <a href="#contact">Contact</a>
     </nav>
 
-    <div class="actions">
-      <a href="/login" class="btn btn-outline">Sign in</a>
-      <a href="/register" class="btn btn-primary">Join now</a>
+    <div class="actions" id="headerActions">
+      <a href="/auth" class="btn btn-outline">Sign in</a>
+      <a href="/auth" class="btn btn-primary">Join now</a>
     </div>
+
   </div>
 </header>
 
 <main>
+
 <section class="hero">
   <div class="container hero-grid">
+
     <div>
       <div class="eyebrow">The smarter way to shop</div>
-      <h1>Everything you need.<br><span>One powerful hub.</span></h1>
+
+      <h1>
+        Everything you need.<br>
+        <span>One powerful hub.</span>
+      </h1>
 
       <p class="hero-text">
         Discover premium products, mobile data, international numbers
@@ -246,35 +528,60 @@ footer{
       </p>
 
       <div class="hero-buttons">
-        <a href="#products" class="btn btn-primary">Explore marketplace →</a>
-        <a href="#categories" class="btn btn-outline">Discover services</a>
+        <a href="#products" class="btn btn-primary">
+          Explore marketplace →
+        </a>
+
+        <a href="#categories" class="btn btn-outline">
+          Discover services
+        </a>
       </div>
 
       <div class="stats">
-        <div class="stat"><strong>24/7</strong><small>Online access</small></div>
-        <div class="stat"><strong>All-in-one</strong><small>Digital marketplace</small></div>
-        <div class="stat"><strong>Easy</strong><small>Shopping experience</small></div>
+        <div class="stat">
+          <strong>24/7</strong>
+          <small>Online access</small>
+        </div>
+
+        <div class="stat">
+          <strong>All-in-one</strong>
+          <small>Digital marketplace</small>
+        </div>
+
+        <div class="stat">
+          <strong>Easy</strong>
+          <small>Shopping experience</small>
+        </div>
       </div>
     </div>
 
     <div class="hero-art">
-      <img src="https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=1000&q=85" alt="Modern digital technology">
-      <div class="art-label">SAVCEL HUB • PREMIUM MARKETPLACE</div>
+      <img
+        src="https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=1000&q=85"
+        alt="Modern digital technology"
+      >
+      <div class="art-label">
+        SAVCEL HUB • PREMIUM MARKETPLACE
+      </div>
     </div>
+
   </div>
 </section>
 
 <section id="categories">
   <div class="container">
+
     <div class="section-head">
       <div>
         <h2>Explore categories</h2>
         <p>Everything organised in one place.</p>
       </div>
+
       <a href="#products" class="view-link">Explore all →</a>
     </div>
 
     <div class="categories">
+
       <a class="category" href="#products">
         <div class="category-icon">🛍️</div>
         <h3>Fashion & Goods</h3>
@@ -298,27 +605,36 @@ footer{
         <h3>Digital Services</h3>
         <p>Digital products, vouchers and online services.</p>
       </a>
+
     </div>
   </div>
 </section>
 
 <section id="products">
   <div class="container">
+
     <div class="section-head">
       <div>
         <h2>Featured collection</h2>
-        <p>A preview of what you can discover at SavCel Hub.</p>
+        <p>Discover what is coming to SavCel Hub.</p>
       </div>
+
       <span class="view-link">Coming to the store</span>
     </div>
 
     <div class="products">
+
       <article class="product">
-        <img src="https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=700&q=85" alt="Red sneakers">
+        <img
+          src="https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=700&q=85"
+          alt="Red sneakers"
+        >
+
         <div class="product-info">
           <div class="product-tag">Fashion</div>
           <h3>Premium Sneakers</h3>
           <p>Explore footwear collections.</p>
+
           <div class="product-bottom">
             <span class="price">Coming soon</span>
             <span class="view-link">Explore</span>
@@ -327,11 +643,16 @@ footer{
       </article>
 
       <article class="product">
-        <img src="https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=700&q=85" alt="Headphones">
+        <img
+          src="https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=700&q=85"
+          alt="Headphones"
+        >
+
         <div class="product-info">
           <div class="product-tag">Electronics</div>
           <h3>Wireless Headphones</h3>
           <p>Discover everyday technology.</p>
+
           <div class="product-bottom">
             <span class="price">Coming soon</span>
             <span class="view-link">Explore</span>
@@ -340,11 +661,16 @@ footer{
       </article>
 
       <article class="product">
-        <img src="https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=700&q=85" alt="Modern lifestyle products">
+        <img
+          src="https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=700&q=85"
+          alt="Lifestyle products"
+        >
+
         <div class="product-info">
           <div class="product-tag">Lifestyle</div>
           <h3>Everyday Essentials</h3>
           <p>Quality products for daily life.</p>
+
           <div class="product-bottom">
             <span class="price">Coming soon</span>
             <span class="view-link">Explore</span>
@@ -353,46 +679,108 @@ footer{
       </article>
 
       <article class="product">
-        <img src="https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=700&q=85" alt="Digital technology">
+        <img
+          src="https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=700&q=85"
+          alt="Digital technology"
+        >
+
         <div class="product-info">
           <div class="product-tag">Digital</div>
           <h3>Digital Solutions</h3>
           <p>Useful digital products and services.</p>
+
           <div class="product-bottom">
             <span class="price">Coming soon</span>
             <span class="view-link">Explore</span>
           </div>
         </div>
       </article>
+
     </div>
   </div>
 </section>
 
 <section id="reseller">
   <div class="container">
+
     <div class="promo">
       <div>
         <div class="eyebrow">Grow with SavCel</div>
+
         <h2>Become a SavCel reseller.</h2>
+
         <p>
           Build your own sales journey with access to reseller products,
           special pricing and an organised account dashboard.
         </p>
-        <a href="/register" class="btn btn-primary">Become a reseller →</a>
+
+        <a href="/auth" class="btn btn-primary">
+          Become a reseller →
+        </a>
       </div>
-      <div class="category-icon" style="width:90px;height:90px;font-size:42px">🚀</div>
+
+      <div
+        class="category-icon"
+        style="width:90px;height:90px;font-size:42px"
+      >
+        🚀
+      </div>
     </div>
+
   </div>
 </section>
+
 </main>
 
 <footer id="contact">
   <div class="container footer-row">
+
     <a href="/" class="logo">SavCel<span>Hub.</span></a>
+
     <p>© 2026 SavCel Hub. All rights reserved.</p>
+
     <p>Premium shopping. Digital convenience.</p>
+
   </div>
 </footer>
+
+<script>
+async function updateHeader() {
+  const actions = document.getElementById("headerActions");
+
+  try {
+    const response = await fetch("/api/auth/me", {
+      method: "GET",
+      credentials: "same-origin",
+      cache: "no-store"
+    });
+
+    if (!response.ok) {
+      window.location.replace("/auth");
+      return;
+    }
+
+    const result = await response.json();
+
+    if (!result.success || !result.user) {
+      window.location.replace("/auth");
+      return;
+    }
+
+    actions.innerHTML = `
+      <a href="/account" class="btn btn-outline">My Account</a>
+      <a href="/settings" class="btn btn-primary">Settings</a>
+    `;
+
+  } catch (error) {
+    actions.innerHTML = `
+      <a href="/auth" class="btn btn-primary">Login</a>
+    `;
+  }
+}
+
+updateHeader();
+</script>
 
 </body>
 </html>
