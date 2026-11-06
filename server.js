@@ -235,7 +235,7 @@ async function adminOnly(req, res, next) {
 }
 
 // SMM AFRICA API CONNECTION
-async function smmRequest(action) {
+async function smmRequest(action, params = {}) {
   const apiUrl =
     process.env.SMM_API_URL ||
     "https://smm.africa/api/v3";
@@ -246,6 +246,19 @@ async function smmRequest(action) {
     throw new Error(
       "SMM_API_KEY is not configured in Render."
     );
+  }
+
+  const allowedActions = [
+    "balance",
+    "services",
+    "add",
+    "status",
+    "refill",
+    "cancel"
+  ];
+
+  if (!allowedActions.includes(action)) {
+    throw new Error("Unsupported SMM API action.");
   }
 
   const url = new URL(apiUrl);
@@ -259,19 +272,48 @@ async function smmRequest(action) {
     );
   }
 
+  if (
+    !params ||
+    typeof params !== "object" ||
+    Array.isArray(params)
+  ) {
+    throw new Error("Invalid SMM request parameters.");
+  }
+
   const response = await fetch(url.toString(), {
     method: "POST",
     headers: {
       "Authorization": "Bearer " + apiKey,
       "Content-Type": "application/json"
     },
-    body: JSON.stringify({ action }),
+    body: JSON.stringify({
+      ...params,
+      action
+    }),
     signal: AbortSignal.timeout(20000)
   });
 
-  const data = await response.json();
+  const responseText = await response.text();
 
-  if (!response.ok || data.error) {
+  let data;
+
+  try {
+    data = JSON.parse(responseText);
+  } catch {
+    console.error(
+      "SMM provider returned an invalid response."
+    );
+
+    throw new Error(
+      "The provider returned an unexpected response."
+    );
+  }
+
+  if (
+    !response.ok ||
+    data.error ||
+    data.success === false
+  ) {
     console.error("SMM provider error:", {
       status: response.status,
       code: data.code || "UNKNOWN",
@@ -279,7 +321,7 @@ async function smmRequest(action) {
     });
 
     throw new Error(
-      "Provider connection failed. Check the API credentials and provider account."
+      "SMM provider request failed. Check the provider account."
     );
   }
 
