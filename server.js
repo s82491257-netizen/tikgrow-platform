@@ -633,17 +633,21 @@ app.post("/api/orders/:code/pay", async (req, res) => {
   }
 });
 
-// CUSTOMER RETURNS FROM PAYSTACK
+    // CUSTOMER RETURNS FROM PAYSTACK
 app.get("/payment-callback", async (req, res) => {
   try {
     const reference = String(req.query.reference || req.query.trxref || "");
 
-    if (!reference) return res.redirect("/?payment=missing");
+    if (!reference) {
+      return res.redirect("/?payment=missing");
+    }
 
     const orderCode = await confirmPayment(reference);
 
     return res.redirect(
       "/payment-success.html?order=" + encodeURIComponent(orderCode)
+    );
+
   } catch (error) {
     console.error("Payment callback error:", error.message);
     return res.redirect("/?payment=verify-failed");
