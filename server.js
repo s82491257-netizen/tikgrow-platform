@@ -1,11 +1,13 @@
 
 
+
 require("dotenv").config();
 
 const express = require("express");
 const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
 const path = require("path");
+const fs = require("fs");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -21,48 +23,39 @@ app.use(express.urlencoded({ extended: true, limit: "1mb" }));
 
 app.use(rateLimit({
   windowMs: 15 * 60 * 1000,
-  limit: 150,
-  standardHeaders: "draft-7",
-  legacyHeaders: false
+  limit: 150
 }));
 
-// SERVER STATUS
 app.get("/api/health", (req, res) => {
-  res.status(200).json({
+  res.json({
     success: true,
     name: "SavCel Hub",
     version: "2.0.0",
-    status: "online",
-    message: "Welcome to SavCel Hub API"
+    status: "online"
   });
 });
 
-// STORE WEBSITE
-app.use(express.static(path.join(__dirname, "public")));
-
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "index.html"));
-});
-
-// API INFORMATION
 app.get("/api", (req, res) => {
   res.json({
     success: true,
-    platform: "SavCel Hub",
-    services: [
-      "Online Store",
-      "Data Bundles",
-      "Phone Numbers",
-      "Digital Products",
-      "Reseller Platform",
-      "Customer Accounts",
-      "Paystack Payments",
-      "Admin Dashboard"
-    ]
+    platform: "SavCel Hub"
   });
 });
 
-// 404
+// SERVE HOMEPAGE FROM ROOT
+app.get("/", (req, res) => {
+  const homepage = path.join(__dirname, "index.html");
+
+  if (!fs.existsSync(homepage)) {
+    return res.status(404).send("Homepage index.html was not found.");
+  }
+
+  res.sendFile(homepage);
+});
+
+// SERVE OTHER STATIC FILES
+app.use(express.static(__dirname));
+
 app.use((req, res) => {
   res.status(404).json({
     success: false,
@@ -70,9 +63,8 @@ app.use((req, res) => {
   });
 });
 
-// ERROR HANDLER
 app.use((err, req, res, next) => {
-  console.error("Server error:", err.message);
+  console.error("Server error:", err.stack);
 
   res.status(500).json({
     success: false,
@@ -80,10 +72,6 @@ app.use((err, req, res, next) => {
   });
 });
 
-// START SERVER
 app.listen(PORT, "0.0.0.0", () => {
-  console.log("================================");
-  console.log("       SAVCEL HUB ONLINE");
-  console.log("================================");
-  console.log(`Server running on port ${PORT}`);
+  console.log(`SavCel Hub running on port ${PORT}`);
 });
