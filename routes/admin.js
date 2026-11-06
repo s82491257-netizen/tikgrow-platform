@@ -8,23 +8,36 @@ const router = express.Router();
 
 router.use(requireAuth);
 
-// ONE-TIME ADMIN ACCOUNT SETUP
-router.post("/setup", async (req, res) => {
+// SECURE TOKEN CHECK
+function validSetupToken(req) {
+  const savedToken = String(
+    process.env.ADMIN_SETUP_TOKEN || ""
+  ).trim();
+
   const suppliedToken = String(
-    req.headers["x-admin-setup-token"] || ""
+    req.get("x-admin-setup-token") || ""
+  ).trim();
+
+  if (savedToken.length < 40 || !suppliedToken) {
+    return false;
+  }
+
+  const savedBuffer = Buffer.from(savedToken, "utf8");
+  const suppliedBuffer = Buffer.from(suppliedToken, "utf8");
+
+  if (savedBuffer.length !== suppliedBuffer.length) {
+    return false;
+  }
+
+  return crypto.timingSafeEqual(
+    savedBuffer,
+    suppliedBuffer
   );
+}
 
-  const savedToken = process.env.ADMIN_SETUP_TOKEN || "";
-
-  if (
-    !savedToken ||
-    savedToken.length < 40 ||
-    suppliedToken.length !== savedToken.length ||
-    !crypto.timingSafeEqual(
-      Buffer.from(suppliedToken),
-      Buffer.from(savedToken)
-    )
-  ) {
+// ACTIVATE FIRST ADMINISTRATOR
+router.post("/setup", async (req, res) => {
+  if (!validSetupToken(req)) {
     return res.status(403).json({
       success: false,
       message: "Invalid admin setup authorization."
@@ -36,25 +49,25 @@ router.post("/setup", async (req, res) => {
   try {
     await client.query("BEGIN");
 
-    // Prevent two people from claiming admin access together.
     await client.query(
       "SELECT pg_advisory_xact_lock(99112233)"
     );
 
     const currentUser = await client.query(
-      `SELECT id, role
+      `SELECT id, role, is_active
        FROM users
-       WHERE id = $1 AND is_active = TRUE
+       WHERE id = $1
        FOR UPDATE`,
       [req.user.id]
     );
 
-    if (!currentUser.rows.length) {
+    if (!currentUser.rows.length ||
+        !currentUser.rows[0].is_active) {
       await client.query("ROLLBACK");
 
-      return res.status(404).json({
+      return res.status(403).json({
         success: false,
-        message: "Account not found."
+        message: "Your account is not active."
       });
     }
 
@@ -68,17 +81,18 @@ router.post("/setup", async (req, res) => {
     }
 
     const existingAdmin = await client.query(
-      `SELECT id FROM users
+      `SELECT id
+       FROM users
        WHERE role = 'admin'
        LIMIT 1`
     );
 
-    if (existingAdmin.rows.length) {
+    if (existingAdmin.rows.length > 0) {
       await client.query("ROLLBACK");
 
-      return res.status(403).json({
+      return res.status(409).json({
         success: false,
-        message: "Admin setup has already been completed."
+        message: "An administrator already exists."
       });
     }
 
@@ -93,7 +107,7 @@ router.post("/setup", async (req, res) => {
 
     return res.json({
       success: true,
-      message: "Your account is now the SavCel Hub administrator."
+      message: "Administrator account activated successfully."
     });
 
   } catch (error) {
@@ -103,7 +117,7 @@ router.post("/setup", async (req, res) => {
 
     return res.status(500).json({
       success: false,
-      message: "Admin setup could not be completed."
+      message: "Admin setup failed. Please try again."
     });
 
   } finally {
@@ -111,32 +125,33 @@ router.post("/setup", async (req, res) => {
   }
 });
 
-// ADMIN ACCESS CHECK
+// ADMIN DASHBOARD API
 router.get("/dashboard", async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT role FROM users
+      `SELECT id, full_name, email, role
+       FROM users
        WHERE id = $1 AND is_active = TRUE`,
       [req.user.id]
     );
 
-    if (!result.rows.length || result.rows[0].role !== "admin") {
+    if (!result.rows.length ||
+        result.rows[0].role !== "admin") {
       return res.status(403).json({
         success: false,
         message: "Administrator access required."
       });
     }
 
-    res.json({
+    return res.json({
       success: true,
-      message: "Welcome to SavCel Hub Admin.",
-      dashboard: true
+      admin: result.rows[0]
     });
 
   } catch (error) {
     console.error("Admin dashboard error:", error.message);
 
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: "Unable to load admin dashboard."
     });
