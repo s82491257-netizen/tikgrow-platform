@@ -1,11 +1,9 @@
 
-
-
 {
   "name": "savcel-hub",
   "version": "2.0.0",
   "private": true,
-  "description": "SavCel Hub Premium Digital Marketplace",
+  "description": "SavCel Hub Marketplace and Reseller Platform",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
@@ -17,6 +15,7 @@
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "express-rate-limit": "^7.5.0",
-    "helmet": "^8.0.0"
+    "helmet": "^8.0.0",
+    "pg": "^8.13.1"
   }
 }
