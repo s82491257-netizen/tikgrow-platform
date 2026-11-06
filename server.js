@@ -7,6 +7,7 @@ const rateLimit = require("express-rate-limit");
 const path = require("path");
 const fs = require("fs");
 const { pool, testDatabase } = require("./db");
+const authRoutes = require("./routes/auth");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -59,6 +60,9 @@ app.get("/api", (req, res) => {
   });
 });
 
+// CUSTOMER AUTHENTICATION
+app.use("/api/auth", authRoutes);
+
 app.get("/", (req, res) => {
   const homepage = path.join(__dirname, "index.html");
 
@@ -69,7 +73,7 @@ app.get("/", (req, res) => {
   res.sendFile(homepage);
 });
 
-// Serve only public website assets.
+// Public website assets only
 app.use(express.static(path.join(__dirname, "public")));
 
 app.use((req, res) => {
