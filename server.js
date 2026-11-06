@@ -322,6 +322,66 @@ async function initializeDatabase() {
     ADD COLUMN IF NOT EXISTS quantity INTEGER DEFAULT 1000
   `);
 
+  // SMM AFRICA AUTOMATIC DELIVERY TRACKING
+  await pool.query(`
+    ALTER TABLE orders
+    ADD COLUMN IF NOT EXISTS smm_service_id INTEGER
+  `);
+
+  await pool.query(`
+    ALTER TABLE orders
+    ADD COLUMN IF NOT EXISTS smm_order_id TEXT
+  `);
+
+  await pool.query(`
+    ALTER TABLE orders
+    ADD COLUMN IF NOT EXISTS smm_idempotency_key TEXT
+  `);
+
+  await pool.query(`
+    ALTER TABLE orders
+    ADD COLUMN IF NOT EXISTS smm_payload JSONB
+  `);
+
+  await pool.query(`
+    ALTER TABLE orders
+    ADD COLUMN IF NOT EXISTS smm_status TEXT DEFAULT 'Not submitted'
+  `);
+
+  await pool.query(`
+    ALTER TABLE orders
+    ADD COLUMN IF NOT EXISTS smm_error TEXT
+  `);
+
+  await pool.query(`
+    ALTER TABLE orders
+    ADD COLUMN IF NOT EXISTS smm_submitted_at TIMESTAMPTZ
+  `);
+
+  await pool.query(`
+    ALTER TABLE orders
+    ADD COLUMN IF NOT EXISTS smm_charged_usd NUMERIC(14,6)
+  `);
+
+  await pool.query(`
+    ALTER TABLE orders
+    ADD COLUMN IF NOT EXISTS smm_last_checked_at TIMESTAMPTZ
+  `);
+
+  await pool.query(`
+    CREATE UNIQUE INDEX IF NOT EXISTS
+    orders_smm_idempotency_unique
+    ON orders(smm_idempotency_key)
+    WHERE smm_idempotency_key IS NOT NULL
+  `);
+
+  await pool.query(`
+    CREATE UNIQUE INDEX IF NOT EXISTS
+    orders_smm_order_unique
+    ON orders(smm_order_id)
+    WHERE smm_order_id IS NOT NULL
+  `);
+  
   await pool.query(`
     CREATE TABLE IF NOT EXISTS customer_users (
       id SERIAL PRIMARY KEY,
