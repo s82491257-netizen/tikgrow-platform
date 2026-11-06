@@ -109,6 +109,29 @@ a{color:var(--blue);overflow-wrap:anywhere;font-weight:600}
 
 <main class="container">
 
+<div class="card">
+  <h2>🚀 SMM Africa Provider</h2>
+  <p class="muted">
+    Check your provider connection, wallet balance and available TikTok services.
+  </p>
+
+  <button id="providerCheckBtn" onclick="checkProvider()">
+    CHECK PROVIDER CONNECTION
+  </button>
+
+  <div id="providerMessage" style="
+    display:none;
+    margin-top:15px;
+    padding:14px;
+    border-radius:10px;
+    background:#eaf5ff;
+    color:#10243e;
+    overflow-wrap:anywhere;
+  "></div>
+
+  <div id="providerServices" style="margin-top:15px"></div>
+</div>
+ 
 <section class="card login-box" id="loginCard">
  <div class="login-logo">TIKGROW</div>
  <h2 style="text-align:center">Admin Login</h2>
@@ -417,6 +440,61 @@ function exportCSV() {
  a.download = "tikgrow-orders.csv";
  a.click();
  URL.revokeObjectURL(url);
+}
+
+async function checkProvider() {
+  const button = document.getElementById("providerCheckBtn");
+  const message = document.getElementById("providerMessage");
+  const servicesBox = document.getElementById("providerServices");
+
+  button.disabled = true;
+  button.textContent = "CHECKING CONNECTION...";
+  message.style.display = "block";
+  message.textContent = "Connecting to SMM Africa...";
+  servicesBox.innerHTML = "";
+
+  try {
+    const data = await api("/api/admin/provider/check", {
+      method: "POST",
+      body: JSON.stringify({})
+    });
+
+    message.innerHTML = `
+      <strong>✅ Connection successful</strong><br><br>
+      Wallet Balance: <strong>${escapeHTML(data.balance ?? "Unknown")} ${escapeHTML(data.currency ?? "")}</strong><br>
+      Total Provider Services: <strong>${Number(data.total_services || 0)}</strong><br>
+      TikTok Services Found: <strong>${Array.isArray(data.tiktok_services) ? data.tiktok_services.length : 0}</strong>
+    `;
+
+    const services = Array.isArray(data.tiktok_services)
+      ? data.tiktok_services
+      : [];
+
+    if (!services.length) {
+      servicesBox.textContent = "No TikTok services were returned.";
+    } else {
+      servicesBox.innerHTML = `
+        <h3>Available TikTok Services</h3>
+        ${services.map(service => `
+          <div class="detail" style="margin-bottom:9px">
+            <strong>${escapeHTML(service.name || "Unnamed service")}</strong><br>
+            Service ID: ${escapeHTML(service.service ?? "-")}<br>
+            Rate: ${escapeHTML(service.rate ?? "-")}<br>
+            Minimum: ${escapeHTML(service.min ?? "-")}<br>
+            Maximum: ${escapeHTML(service.max ?? "-")}<br>
+            Type: ${escapeHTML(service.type ?? "-")}
+          </div>
+        `).join("")}
+      `;
+    }
+
+  } catch (error) {
+    message.textContent = "❌ Provider check failed: " + error.message;
+    servicesBox.innerHTML = "";
+  } finally {
+    button.disabled = false;
+    button.textContent = "CHECK PROVIDER CONNECTION";
+  }
 }
 
 if (adminToken) {
