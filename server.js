@@ -9,6 +9,7 @@ const fs = require("fs");
 
 const { testDatabase } = require("./db");
 const authRoutes = require("./routes/auth");
+const productsRoutes = require("./routes/products");
 const requireAuth = require("./middleware/auth");
 
 const app = express();
@@ -65,6 +66,7 @@ app.get("/api/db-health", async (req, res) => {
 
 // PUBLIC AUTHENTICATION ROUTES
 app.use("/api/auth", authRoutes);
+const productsRoutes = require("./routes/products");
 
 // LOGIN AND REGISTRATION PAGE
 app.get("/auth", (req, res) => {
