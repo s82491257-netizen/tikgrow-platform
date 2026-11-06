@@ -1,231 +1,435 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="theme-color" content="#070b18">
-<title>TIKGROW — TikTok Promotion Marketplace</title>
+<title>TIKGROW - Social Growth Marketplace</title>
 <style>
-:root{--bg:#070b18;--panel:#10182c;--panel2:#151f38;--blue:#176bff;--cyan:#19c8ff;--white:#f7f9ff;--muted:#9ba9c5;--line:#263451}
+:root{
+  --blue:#168bfa;
+  --blue2:#0875e8;
+  --light:#eaf5ff;
+  --ink:#10243e;
+  --muted:#718198;
+  --white:#fff;
+  --border:#e3edf7;
+  --shadow:0 12px 35px rgba(20,91,160,.09);
+}
 *{box-sizing:border-box}
-html{scroll-behavior:smooth}
-body{margin:0;background:var(--bg);color:var(--white);font-family:Arial,Helvetica,sans-serif}
-a{color:inherit;text-decoration:none}
-button,input,select,textarea{font:inherit}
+body{
+  margin:0;
+  font-family:Arial,Helvetica,sans-serif;
+  color:var(--ink);
+  background:#f7fbff;
+}
+button,input{font:inherit}
 button{cursor:pointer}
-header{height:72px;display:flex;align-items:center;justify-content:space-between;padding:0 5%;background:#090f20;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20}
-.logo{font-size:25px;font-weight:900;letter-spacing:1px}.logo span{color:var(--cyan)}
-.menu-btn{background:var(--panel2);border:1px solid var(--line);color:white;border-radius:10px;padding:10px 13px;font-size:23px}
-.header-right{display:flex;align-items:center;gap:12px}
-.small-btn{border:1px solid var(--line);background:var(--panel2);color:white;padding:10px 13px;border-radius:9px}
-.hero{padding:65px 6% 55px;background:radial-gradient(ellipse at 80% 20%,#123e85 0,transparent 42%),linear-gradient(130deg,#0b1530,#070b18 70%);text-align:center}
-.tag{display:inline-block;color:var(--cyan);border:1px solid #176bff66;background:#176bff18;border-radius:30px;padding:8px 14px;font-size:12px;font-weight:bold;letter-spacing:1px}
-.hero h1{font-size:clamp(34px,7vw,65px);line-height:1.06;margin:20px auto 15px;max-width:850px}
-.hero h1 span{color:var(--cyan)}
-.hero p{color:var(--muted);font-size:16px;line-height:1.7;max-width:600px;margin:0 auto 25px}
-.primary{background:linear-gradient(100deg,var(--blue),#1599ff);border:0;color:white;font-weight:bold;padding:14px 21px;border-radius:10px;display:inline-block}
-.secondary{background:transparent;border:1px solid #4c78bd;color:white;padding:13px 20px;border-radius:10px;display:inline-block;margin-left:8px}
-.wrap{width:min(1100px,92%);margin:auto}
-.section{padding:48px 0}
-.section-title{text-align:center;margin-bottom:27px}
-.section-title h2{font-size:29px;margin:0 0 9px}
-.section-title p{color:var(--muted);margin:0}
-.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:15px}
-.service{background:linear-gradient(145deg,var(--panel2),var(--panel));border:1px solid var(--line);border-radius:16px;padding:22px;transition:.2s}
-.service:hover{border-color:var(--cyan);transform:translateY(-3px)}
-.service .emoji{font-size:30px}
-.service h3{margin:13px 0 7px}
+header{
+  position:sticky;top:0;z-index:20;
+  background:rgba(255,255,255,.96);
+  border-bottom:1px solid var(--border);
+  backdrop-filter:blur(12px);
+}
+.nav{
+  max-width:1150px;margin:auto;padding:15px 20px;
+  display:flex;align-items:center;justify-content:space-between;
+  gap:12px;
+}
+.logo{font-size:25px;font-weight:900;letter-spacing:-1px;color:var(--blue)}
+.logo span{color:var(--ink)}
+.nav-right{display:flex;align-items:center;gap:9px}
+.btn{
+  border:0;border-radius:11px;padding:12px 17px;
+  font-weight:700;background:var(--blue);color:white;
+}
+.btn:hover{background:var(--blue2)}
+.btn-outline{
+  background:white;color:var(--blue);
+  border:1px solid #b9dcff;
+}
+.btn-outline:hover{background:var(--light)}
+.icon-btn{
+  width:43px;height:43px;border-radius:12px;
+  border:1px solid var(--border);background:white;
+  color:var(--ink);font-size:21px;
+}
+main{max-width:1150px;margin:auto;padding:25px 20px 60px}
+.hero{
+  position:relative;overflow:hidden;
+  padding:45px 35px;border-radius:25px;
+  background:linear-gradient(120deg,#e9f5ff,#d5ebff 55%,#f5fbff);
+  box-shadow:var(--shadow);
+}
+.hero:after{
+  content:"";position:absolute;width:300px;height:300px;
+  border-radius:50%;right:-70px;top:-110px;
+  background:rgba(255,255,255,.55);
+}
+.hero-content{position:relative;z-index:1;max-width:650px}
+.eyebrow{
+  display:inline-block;padding:8px 12px;border-radius:30px;
+  color:#0875e8;background:white;font-size:12px;font-weight:800;
+  letter-spacing:1px;
+}
+.hero h1{font-size:clamp(32px,6vw,53px);line-height:1.08;margin:18px 0 12px}
+.hero h1 span{color:var(--blue)}
+.hero p{color:#58718d;line-height:1.7;max-width:540px}
+.hero-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:22px}
+.section-head{
+  display:flex;align-items:end;justify-content:space-between;
+  gap:12px;margin:36px 0 17px;
+}
+.section-head h2{margin:0;font-size:24px}
+.section-head p{margin:7px 0 0;color:var(--muted);font-size:14px}
+.platform-grid{
+  display:grid;grid-template-columns:repeat(5,1fr);gap:12px;
+}
+.platform{
+  background:white;border:1px solid var(--border);border-radius:16px;
+  padding:17px 10px;text-align:center;
+}
+.platform .symbol{
+  width:43px;height:43px;margin:0 auto 10px;border-radius:13px;
+  background:var(--light);display:grid;place-items:center;
+  font-size:21px;font-weight:900;color:var(--blue);
+}
+.platform strong{display:block;font-size:14px}
+.platform small{display:block;margin-top:6px;color:var(--muted);font-size:11px}
+.service-grid{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:16px;
+}
+.service{
+  background:white;border:1px solid var(--border);
+  border-radius:19px;padding:20px;box-shadow:0 5px 18px rgba(20,91,160,.035);
+  transition:.2s;
+}
+.service:hover{transform:translateY(-3px);box-shadow:var(--shadow)}
+.service-top{display:flex;align-items:center;justify-content:space-between}
+.service-icon{
+  width:49px;height:49px;border-radius:15px;
+  display:grid;place-items:center;background:var(--light);
+  font-size:24px;
+}
+.service-tag{
+  background:#eff8ff;color:#0875e8;padding:6px 9px;
+  border-radius:20px;font-size:11px;font-weight:800;
+}
+.service h3{margin:17px 0 7px;font-size:19px}
 .service p{color:var(--muted);font-size:13px;line-height:1.5;min-height:38px}
-.price{font-size:20px;font-weight:bold;color:var(--cyan)}
-.price small{font-size:12px;color:var(--muted);font-weight:normal}
-.panel{background:var(--panel);border:1px solid var(--line);border-radius:17px;padding:23px}
-.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-.field{display:flex;flex-direction:column;gap:7px}
-.field.full{grid-column:1/-1}
-label{font-size:13px;color:#dce7ff;font-weight:bold}
-input,select,textarea{width:100%;padding:13px;background:#080f20;border:1px solid #2a3b5b;border-radius:9px;color:white;outline:none}
-input:focus,select:focus,textarea:focus{border-color:var(--cyan)}
-textarea{min-height:75px;resize:vertical}
-.help{font-size:12px;color:var(--muted);line-height:1.5}
-.total{background:#091a35;border:1px solid #176bff66;border-radius:12px;padding:16px;margin:16px 0}
-.total strong{font-size:26px;color:var(--cyan)}
-.full-btn{width:100%;padding:15px;border:0;border-radius:10px;background:linear-gradient(100deg,var(--blue),#1599ff);color:white;font-weight:bold}
-.notice{font-size:13px;color:var(--muted);line-height:1.5;margin-top:12px}
-.result{margin-top:14px;padding:14px;border-radius:10px;background:#0b1930;border:1px solid var(--line);overflow-wrap:anywhere}
-.hidden{display:none!important}
-.drawer-bg{position:fixed;inset:0;background:#0009;z-index:29}
-.drawer{position:fixed;top:0;left:0;height:100%;width:min(320px,85vw);background:#0d162b;border-right:1px solid var(--line);z-index:30;padding:23px;transform:translateX(-105%);transition:.25s}
-.drawer.open{transform:translateX(0)}
-.drawer a,.drawer button{display:block;width:100%;text-align:left;padding:15px 10px;border:0;border-bottom:1px solid var(--line);background:transparent;color:white;font-size:15px}
-.drawer .drawer-logo{font-size:24px;font-weight:900;border:0;padding:10px 0 22px}
-.close{float:right;background:transparent;color:white;border:0;font-size:25px}
-.account-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:15px}
-.account-row button{flex:1;min-width:120px}
-footer{border-top:1px solid var(--line);padding:30px 5%;text-align:center;color:var(--muted);font-size:13px}
-footer strong{color:white}
-@media(max-width:700px){.grid{grid-template-columns:1fr 1fr}.form-grid{grid-template-columns:1fr}.field.full{grid-column:auto}.hero{padding:48px 5%}.hero h1{font-size:39px}.header-right .small-btn{display:none}}
-@media(max-width:430px){.grid{grid-template-columns:1fr}.section{padding:35px 0}.panel{padding:17px}}
+.price{font-size:18px;font-weight:900;margin:15px 0}
+.price small{font-size:11px;color:var(--muted);font-weight:500}
+.service .btn{width:100%}
+.info-strip{
+  margin-top:28px;padding:20px;border-radius:17px;
+  background:white;border:1px solid var(--border);
+  display:flex;justify-content:space-between;gap:18px;flex-wrap:wrap;
+}
+.info-item{display:flex;gap:10px;align-items:center;font-size:13px;color:#526981}
+.info-item b{color:var(--ink)}
+footer{
+  border-top:1px solid var(--border);background:white;
+  padding:25px 20px;text-align:center;color:var(--muted);font-size:13px;
+}
+footer a{color:var(--blue);text-decoration:none;font-weight:700}
+.menu{
+  display:none;position:absolute;right:18px;top:68px;
+  width:220px;background:white;border:1px solid var(--border);
+  box-shadow:var(--shadow);border-radius:15px;padding:8px;
+}
+.menu.show{display:block}
+.menu button{
+  width:100%;text-align:left;padding:12px;border:0;
+  background:white;border-radius:9px;color:var(--ink);font-weight:700;
+}
+.menu button:hover{background:var(--light)}
+.modal{
+  display:none;position:fixed;inset:0;z-index:50;
+  background:rgba(9,30,55,.55);padding:18px;
+  align-items:center;justify-content:center;overflow-y:auto;
+}
+.modal.show{display:flex}
+.modal-card{
+  background:white;width:100%;max-width:470px;
+  border-radius:21px;padding:24px;box-shadow:var(--shadow);
+  max-height:92vh;overflow-y:auto;
+}
+.modal-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.modal-head h2{margin:0;font-size:22px}
+.close{
+  border:0;background:#f0f6fc;width:36px;height:36px;
+  border-radius:10px;font-size:21px;color:var(--ink);
+}
+.field{margin-top:16px}
+.field label{display:block;font-size:13px;font-weight:800;margin-bottom:7px}
+.field input{
+  width:100%;padding:14px;border:1px solid #dce8f4;
+  border-radius:11px;outline:none;background:#fbfdff;
+}
+.field input:focus{border-color:var(--blue);box-shadow:0 0 0 3px #168bfa18}
+.help{font-size:12px;color:var(--muted);line-height:1.5;margin-top:7px}
+.total-box{
+  background:var(--light);border:1px solid #d7eaff;
+  border-radius:13px;padding:15px;margin-top:17px;
+  display:flex;justify-content:space-between;align-items:center;
+}
+.total-box span{font-size:13px;color:#58718d}
+.total-box strong{font-size:23px;color:var(--blue)}
+.full{width:100%;margin-top:17px}
+.notice{font-size:13px;padding:12px;border-radius:10px;margin-top:14px;display:none}
+.notice.error{display:block;background:#fff0f0;color:#b32626}
+.notice.success{display:block;background:#eaf9ef;color:#18733b}
+.tabs{display:flex;background:#f0f6fc;padding:4px;border-radius:11px;margin-top:18px}
+.tabs button{flex:1;border:0;background:transparent;padding:11px;border-radius:8px;font-weight:800;color:#718198}
+.tabs button.active{background:white;color:var(--blue);box-shadow:0 2px 8px #0000000b}
+.account-line{font-size:13px;color:var(--muted);margin-top:10px}
+.order-row{
+  padding:14px 0;border-bottom:1px solid var(--border);
+  font-size:13px;line-height:1.7;
+}
+.order-row strong{font-size:14px}
+.status{display:inline-block;padding:4px 8px;border-radius:20px;background:#eef7ff;color:#0875e8;font-size:11px;font-weight:800}
+.empty{text-align:center;padding:25px;color:var(--muted);font-size:14px}
+@media(max-width:760px){
+  .service-grid{grid-template-columns:repeat(2,1fr)}
+  .platform-grid{grid-template-columns:repeat(3,1fr)}
+  .hero{padding:32px 23px}
+}
+@media(max-width:480px){
+  main{padding:18px 14px 45px}
+  .nav{padding:12px 14px}
+  .logo{font-size:22px}
+  .nav-right .btn{padding:10px 11px;font-size:12px}
+  .service-grid{grid-template-columns:1fr 1fr;gap:10px}
+  .service{padding:14px}
+  .service h3{font-size:16px}
+  .service p{font-size:12px;min-height:54px}
+  .price{font-size:15px}
+  .service .btn{padding:11px 7px;font-size:12px}
+  .platform-grid{grid-template-columns:repeat(3,1fr)}
+}
 </style>
 </head>
 <body>
 
 <header>
-  <button class="menu-btn" onclick="toggleMenu()" aria-label="Open menu">☰</button>
-  <a class="logo" href="#home">TIK<span>GROW</span></a>
-  <div class="header-right">
-    <button class="small-btn" onclick="showSection('account')">Login</button>
-    <a class="primary" href="#order">Order Now</a>
+  <div class="nav">
+    <div class="logo">TIK<span>GROW</span></div>
+    <div class="nav-right">
+      <button class="btn btn-outline" id="loginNav" onclick="openAuth('login')">Login</button>
+      <button class="btn" id="signupNav" onclick="openAuth('register')">Sign Up</button>
+      <button class="icon-btn" onclick="toggleMenu()" aria-label="Menu">☰</button>
+    </div>
+    <div class="menu" id="menu">
+      <button onclick="goHome()">Home</button>
+      <button onclick="showTrack()">Track an Order</button>
+      <button onclick="openHistory()">My Order History</button>
+      <button onclick="openAuth('login')">Login / Sign Up</button>
+      <button onclick="contactSupport()">Contact Support</button>
+      <button onclick="logout()" id="logoutMenu" style="display:none">Logout</button>
+    </div>
   </div>
 </header>
 
-<div id="drawerBg" class="drawer-bg hidden" onclick="toggleMenu()"></div>
-<nav id="drawer" class="drawer">
-  <button class="close" onclick="toggleMenu()">×</button>
-  <div class="drawer-logo">TIK<span style="color:var(--cyan)">GROW</span></div>
-  <a href="#home" onclick="toggleMenu()">Home</a>
-  <a href="#services" onclick="toggleMenu()">Our Services</a>
-  <a href="#order" onclick="toggleMenu()">Place an Order</a>
-  <a href="#track" onclick="toggleMenu()">Track Order</a>
-  <button onclick="toggleMenu();showSection('history')">Order History</button>
-  <button onclick="toggleMenu();showSection('account')">Login / Register</button>
-  <a href="https://wa.me/233257980924" target="_blank">Contact / WhatsApp Support</a>
-  <a href="#about" onclick="toggleMenu()">About TIKGROW</a>
-</nav>
-
 <main>
-<section class="hero" id="home">
-  <div class="tag">YOUR DIGITAL PROMOTION MARKETPLACE</div>
-  <h1>Grow Your TikTok.<br><span>Reach More People.</span></h1>
-  <p>Explore promotional campaign services for TikTok creators. Choose a service, enter your quantity and place your order easily.</p>
-  <a class="primary" href="#services">Explore Services</a>
-  <a class="secondary" href="#track">Track Order</a>
-</section>
-
-<section class="section wrap" id="services">
-  <div class="section-title">
-    <h2>Our Services</h2>
-    <p>Choose the promotion service you need.</p>
-  </div>
-  <div class="grid">
-    <article class="service"><div class="emoji">❤️</div><h3>TikTok Likes</h3><p>Promotional campaigns for TikTok video likes.</p><div class="price">GH₵25 <small>/ 1,000</small></div></article>
-    <article class="service"><div class="emoji">💬</div><h3>Comments</h3><p>Promote conversation and interaction on videos.</p><div class="price">GH₵35 <small>/ 1,000</small></div></article>
-    <article class="service"><div class="emoji">👥</div><h3>Followers</h3><p>Campaign options to help creators reach audiences.</p><div class="price">GH₵45 <small>/ 1,000</small></div></article>
-    <article class="service"><div class="emoji">▶️</div><h3>Video Views</h3><p>Promotional exposure for your TikTok videos.</p><div class="price">GH₵10 <small>/ 1,000</small></div></article>
-    <article class="service"><div class="emoji">🔁</div><h3>Shares</h3><p>Promotional campaigns for video sharing.</p><div class="price">GH₵35 <small>/ 1,000</small></div></article>
-    <article class="service"><div class="emoji">🔴</div><h3>LIVE Promotion</h3><p>Promotion options for your TikTok LIVE sessions.</p><div class="price">GH₵55 <small>/ 1,000</small></div></article>
-  </div>
-</section>
-
-<section class="section wrap" id="order">
-  <div class="section-title"><h2>Place Your Order</h2><p>Enter your TikTok details and select a campaign.</p></div>
-  <div class="panel">
-    <form id="orderForm">
-      <div class="form-grid">
-        <div class="field">
-          <label for="contact">Phone Number</label>
-          <input id="contact" type="tel" placeholder="e.g. 0241234567" required>
-        </div>
-        <div class="field">
-          <label for="service">Select Service</label>
-          <select id="service" required>
-            <option value="TikTok Likes">TikTok Likes</option>
-            <option value="Comments">Comments</option>
-            <option value="Followers">Followers</option>
-            <option value="Video Views">Video Views</option>
-            <option value="Shares">Shares</option>
-            <option value="LIVE Promotion">LIVE Promotion</option>
-          </select>
-        </div>
-        <div class="field full">
-          <label for="link">TikTok Video / Profile Link</label>
-          <input id="link" type="url" placeholder="Paste your TikTok link here" required>
-        </div>
-        <div class="field">
-          <label for="quantity">Quantity</label>
-          <input id="quantity" type="number" min="1" max="1000000" value="1000" required>
-          <span class="help">Minimum 1 — Maximum 1,000,000</span>
-        </div>
-        <div class="field">
-          <label for="details">Additional Notes (Optional)</label>
-          <input id="details" type="text" placeholder="Any extra instructions">
-        </div>
+  <section class="hero" id="home">
+    <div class="hero-content">
+      <span class="eyebrow">YOUR SOCIAL GROWTH MARKETPLACE</span>
+      <h1>Grow Your Socials.<br><span>Make Your Mark.</span></h1>
+      <p>Choose a promotion service, enter your TikTok link and quantity, and continue to secure checkout.</p>
+      <div class="hero-actions">
+        <button class="btn" onclick="document.getElementById('services').scrollIntoView({behavior:'smooth'})">Explore Services</button>
+        <button class="btn btn-outline" onclick="openHistory()">My Orders</button>
       </div>
-      <div class="total">
-        <div class="help">Estimated total price</div>
-        <strong id="totalPrice">GH₵25.00</strong>
-        <div class="help" id="priceNote">Price is calculated automatically.</div>
-      </div>
-      <button class="full-btn" id="orderButton" type="submit">Continue to Order</button>
-      <div id="orderMessage" class="result hidden"></div>
-      <p class="notice">Never share your TikTok password. TIKGROW is an independent promotion marketplace and is not affiliated with TikTok. Campaign results are not guaranteed.</p>
-    </form>
-  </div>
-</section>
-
-<section class="section wrap" id="track">
-  <div class="section-title"><h2>Track Your Order</h2><p>Enter the Order ID you received after placing an order.</p></div>
-  <div class="panel">
-    <div class="field">
-      <label for="trackCode">Order ID</label>
-      <input id="trackCode" placeholder="Enter your Order ID">
     </div>
-    <br>
-    <button class="full-btn" onclick="trackOrder()">Check Order Status</button>
-    <div id="trackResult" class="result hidden"></div>
-  </div>
-</section>
+  </section>
 
-<section class="section wrap hidden" id="account">
-  <div class="section-title"><h2>Customer Account</h2><p>Register or sign in using your phone number and password.</p></div>
-  <div class="panel">
-    <div class="account-row">
-      <button class="primary" onclick="setAuthMode('login')">Login</button>
-      <button class="small-btn" onclick="setAuthMode('register')">Create Account</button>
+  <div class="section-head">
+    <div>
+      <h2>Choose Your Platform</h2>
+      <p>More platforms are coming soon.</p>
     </div>
-    <form id="authForm">
-      <div class="field">
-        <label for="authPhone">Phone Number</label>
-        <input id="authPhone" type="tel" placeholder="e.g. 0241234567" required>
-      </div><br>
-      <div class="field">
-        <label for="authPassword">Password</label>
-        <input id="authPassword" type="password" minlength="8" placeholder="At least 8 characters" required>
-      </div><br>
-      <button class="full-btn" id="authButton" type="submit">Login</button>
-    </form>
-    <div id="authMessage" class="result hidden"></div>
-    <p class="notice">No SMS is used. Without phone verification, registration does not prove ownership of the phone number. Keep your password private.</p>
-    <button class="small-btn" onclick="logout()" style="margin-top:12px">Logout</button>
   </div>
-</section>
 
-<section class="section wrap hidden" id="history">
-  <div class="section-title"><h2>My Order History</h2><p>Orders placed while signed in to your account.</p></div>
-  <div class="panel">
-    <button class="full-btn" onclick="loadHistory()">Refresh My Orders</button>
-    <div id="historyResult" class="result">Sign in to view your order history.</div>
-  </div>
-</section>
+  <section class="platform-grid">
+    <div class="platform">
+      <div class="symbol">♪</div>
+      <strong>TikTok</strong><small>Available now</small>
+    </div>
+    <div class="platform">
+      <div class="symbol">◎</div>
+      <strong>Instagram</strong><small>Coming soon</small>
+    </div>
+    <div class="platform">
+      <div class="symbol">▶</div>
+      <strong>YouTube</strong><small>Coming soon</small>
+    </div>
+    <div class="platform">
+      <div class="symbol">f</div>
+      <strong>Facebook</strong><small>Coming soon</small>
+    </div>
+    <div class="platform">
+      <div class="symbol">𝕏</div>
+      <strong>X</strong><small>Coming soon</small>
+    </div>
+  </section>
 
-<section class="section wrap" id="about">
-  <div class="panel" style="text-align:center">
-    <h2>About TIKGROW</h2>
-    <p class="notice">TIKGROW is a digital promotion marketplace offering campaign services for TikTok creators. Our goal is to make ordering and tracking promotional services simple.</p>
-    <a class="primary" href="https://wa.me/233257980924" target="_blank">Chat with Support</a>
+  <div class="section-head" id="services">
+    <div>
+      <h2>TikTok Promotion Services</h2>
+      <p>Select a service to start your order.</p>
+    </div>
   </div>
-</section>
+
+  <section class="service-grid">
+    <article class="service">
+      <div class="service-top"><div class="service-icon">♥</div><span class="service-tag">POPULAR</span></div>
+      <h3>TikTok Likes</h3>
+      <p>Promotion for engagement on your TikTok content.</p>
+      <div class="price">GH₵25 <small>/ 1,000</small></div>
+      <button class="btn" onclick="openOrder('TikTok Likes',25)">Buy Likes</button>
+    </article>
+
+    <article class="service">
+      <div class="service-top"><div class="service-icon">💬</div><span class="service-tag">COMMENTS</span></div>
+      <h3>Comments</h3>
+      <p>Promote conversation and interaction on your content.</p>
+      <div class="price">GH₵35 <small>/ 1,000</small></div>
+      <button class="btn" onclick="openOrder('Comments',35)">Buy Comments</button>
+    </article>
+
+    <article class="service">
+      <div class="service-top"><div class="service-icon">♟</div><span class="service-tag">GROWTH</span></div>
+      <h3>Followers</h3>
+      <p>Promotion campaigns to help your profile reach people.</p>
+      <div class="price">GH₵45 <small>/ 1,000</small></div>
+      <button class="btn" onclick="openOrder('Followers',45)">Buy Followers</button>
+    </article>
+
+    <article class="service">
+      <div class="service-top"><div class="service-icon">▶</div><span class="service-tag">VIEWS</span></div>
+      <h3>Video Views</h3>
+      <p>Promote your video and increase its reach.</p>
+      <div class="price">GH₵10 <small>/ 1,000</small></div>
+      <button class="btn" onclick="openOrder('Video Views',10)">Buy Views</button>
+    </article>
+
+    <article class="service">
+      <div class="service-top"><div class="service-icon">↗</div><span class="service-tag">SHARES</span></div>
+      <h3>Shares</h3>
+      <p>Campaigns to encourage more sharing of your content.</p>
+      <div class="price">GH₵35 <small>/ 1,000</small></div>
+      <button class="btn" onclick="openOrder('Shares',35)">Buy Shares</button>
+    </article>
+
+    <article class="service">
+      <div class="service-top"><div class="service-icon">LIVE</div><span class="service-tag">LIVE</span></div>
+      <h3>LIVE Promotion</h3>
+      <p>Promotion for your TikTok LIVE session.</p>
+      <div class="price">GH₵55 <small>/ 1,000</small></div>
+      <button class="btn" onclick="openOrder('LIVE Promotion',55)">Buy LIVE Promotion</button>
+    </article>
+  </section>
+
+  <section class="info-strip">
+    <div class="info-item">🔒 <span><b>Secure checkout</b><br>Paystack payment</span></div>
+    <div class="info-item">📱 <span><b>Mobile friendly</b><br>Designed for your phone</span></div>
+    <div class="info-item">💬 <span><b>Need help?</b><br>WhatsApp support</span></div>
+  </section>
 </main>
 
 <footer>
-  <strong>TIKGROW</strong><br><br>
-  Digital Promotion Marketplace · Ghana<br>
-  <a href="https://wa.me/233257980924" target="_blank">WhatsApp Support: 0257980924</a><br><br>
-  © <span id="year"></span> TIKGROW. All rights reserved.
+  <b>TIKGROW</b> · Social Growth Marketplace<br><br>
+  Support: <a href="https://wa.me/233257980924" target="_blank">WhatsApp 0257980924</a>
 </footer>
 
+<!-- ORDER MODAL -->
+<div class="modal" id="orderModal">
+  <div class="modal-card">
+    <div class="modal-head">
+      <h2 id="orderTitle">Place Your Order</h2>
+      <button class="close" onclick="closeModal('orderModal')">×</button>
+    </div>
+    <p class="help">Enter your contact number, TikTok link and quantity below.</p>
+
+    <div class="field">
+      <label>Phone Number</label>
+      <input id="orderPhone" type="tel" placeholder="e.g. 0257980924">
+    </div>
+    <div class="field">
+      <label>TikTok Video or Profile Link</label>
+      <input id="orderLink" type="url" placeholder="https://www.tiktok.com/@username">
+    </div>
+    <div class="field">
+      <label>Quantity</label>
+      <input id="orderQuantity" type="number" min="1" max="1000000" value="1000" oninput="calculateTotal()">
+      <div class="help">Enter a quantity between 1 and 1,000,000.</div>
+    </div>
+
+    <div class="total-box">
+      <span>Estimated total</span>
+      <strong id="orderTotal">GH₵25.00</strong>
+    </div>
+    <div class="help">Final order pricing is confirmed by the server before payment.</div>
+    <button class="btn full" id="continuePay" onclick="submitOrder()">Continue to Payment</button>
+    <div id="orderMessage" class="notice"></div>
+  </div>
+</div>
+
+<!-- AUTH MODAL -->
+<div class="modal" id="authModal">
+  <div class="modal-card">
+    <div class="modal-head">
+      <h2 id="authTitle">Welcome to TIKGROW</h2>
+      <button class="close" onclick="closeModal('authModal')">×</button>
+    </div>
+    <div class="tabs">
+      <button id="loginTab" class="active" onclick="setAuthMode('login')">Login</button>
+      <button id="registerTab" onclick="setAuthMode('register')">Sign Up</button>
+    </div>
+    <div class="field">
+      <label>Phone Number</label>
+      <input id="authPhone" type="tel" placeholder="Enter your phone number">
+    </div>
+    <div class="field">
+      <label>Password</label>
+      <input id="authPassword" type="password" placeholder="Enter your password">
+    </div>
+    <button class="btn full" id="authSubmit" onclick="submitAuth()">Login</button>
+    <div id="authMessage" class="notice"></div>
+    <p class="help">Use your phone number and password to access your account. Phone numbers are not SMS-verified.</p>
+  </div>
+</div>
+
+<!-- TRACK ORDER MODAL -->
+<div class="modal" id="trackModal">
+  <div class="modal-card">
+    <div class="modal-head">
+      <h2>Track an Order</h2>
+      <button class="close" onclick="closeModal('trackModal')">×</button>
+    </div>
+    <div class="field">
+      <label>Order ID</label>
+      <input id="trackCode" placeholder="Enter your order ID">
+    </div>
+    <button class="btn full" onclick="trackOrder()">Find Order</button>
+    <div id="trackResult"></div>
+  </div>
+</div>
+
+<!-- ORDER HISTORY MODAL -->
+<div class="modal" id="historyModal">
+  <div class="modal-card">
+    <div class="modal-head">
+      <h2>My Orders</h2>
+      <button class="close" onclick="closeModal('historyModal')">×</button>
+    </div>
+    <div id="historyContent"><div class="empty">Loading your orders...</div></div>
+  </div>
+</div>
+
 <script>
-const rates = {
+const API = "";
+const prices = {
   "TikTok Likes":25,
   "Comments":35,
   "Followers":45,
@@ -234,222 +438,338 @@ const rates = {
   "LIVE Promotion":55
 };
 
-const $ = id => document.getElementById(id);
+let selectedService = "";
+let selectedRate = 0;
+let currentUser = null;
 let authMode = "login";
 
-function toggleMenu(){
-  $("drawer").classList.toggle("open");
-  $("drawerBg").classList.toggle("hidden");
-}
-
-function showSection(id){
-  const section = $(id);
-  if(!section) return;
-  section.classList.remove("hidden");
-  section.scrollIntoView({behavior:"smooth",block:"start"});
-  if(id === "history") loadHistory();
-}
-
-function setAuthMode(mode){
-  authMode = mode;
-  $("authButton").textContent = mode === "login" ? "Login" : "Create Account";
-  $("authMessage").classList.add("hidden");
-}
-
-function money(value){
-  return "GH₵" + Number(value).toFixed(2);
-}
-
-function calculate(){
-  const service = $("service").value;
-  const quantity = Number($("quantity").value);
-  const valid = Number.isInteger(quantity) && quantity >= 1 && quantity <= 1000000;
-  const amount = valid ? rates[service] * quantity / 1000 : 0;
-  $("totalPrice").textContent = valid ? money(amount) : "GH₵0.00";
-  $("priceNote").textContent = !valid
-    ? "Enter a whole number from 1 to 1,000,000."
-    : amount < 1
-      ? "This amount is below Paystack's GH₵1 minimum payment."
-      : "GH₵" + rates[service] + " per 1,000 units.";
-  return {valid,amount};
-}
-
-$("service").addEventListener("change",calculate);
-$("quantity").addEventListener("input",calculate);
-$("year").textContent = new Date().getFullYear();
-calculate();
-
-async function api(url, options={}){
-  const response = await fetch(url,{
+async function api(path, options={}) {
+  const response = await fetch(API + path, {
     credentials:"same-origin",
     ...options,
     headers:{
-      ...(options.headers || {}),
-      ...(options.body ? {"Content-Type":"application/json"} : {})
+      "Content-Type":"application/json",
+      ...(options.headers || {})
     }
   });
+
   let data = {};
-  try{data = await response.json()}catch(e){}
-  if(!response.ok) throw new Error(data.error || data.message || "Request failed. Please try again.");
+  try { data = await response.json(); } catch(e) {}
+
+  if (!response.ok) {
+    throw new Error(data.error || data.message || "Something went wrong. Please try again.");
+  }
   return data;
 }
 
-function showMessage(id,message){
-  const box = $(id);
-  box.textContent = message;
-  box.classList.remove("hidden");
+function showMessage(id, message, type="error") {
+  const el = document.getElementById(id);
+  el.textContent = message;
+  el.className = "notice " + type;
 }
 
-$("orderForm").addEventListener("submit",async event=>{
-  event.preventDefault();
-  const estimate = calculate();
-  if(!estimate.valid){
-    showMessage("orderMessage","Please enter a quantity from 1 to 1,000,000.");
-    return;
+function clearMessage(id) {
+  const el = document.getElementById(id);
+  el.textContent = "";
+  el.className = "notice";
+}
+
+function toggleMenu() {
+  document.getElementById("menu").classList.toggle("show");
+}
+
+function closeMenu() {
+  document.getElementById("menu").classList.remove("show");
+}
+
+function goHome() {
+  closeMenu();
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+
+function contactSupport() {
+  closeMenu();
+  window.open("https://wa.me/233257980924","_blank");
+}
+
+function openModal(id) {
+  document.getElementById(id).classList.add("show");
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove("show");
+}
+
+function openOrder(service, rate) {
+  selectedService = service;
+  selectedRate = rate;
+  document.getElementById("orderTitle").textContent = service;
+  document.getElementById("orderQuantity").value = 1000;
+  document.getElementById("orderPhone").value = currentUser?.phone || "";
+  document.getElementById("orderLink").value = "";
+  document.getElementById("continuePay").disabled = false;
+  document.getElementById("continuePay").textContent = "Continue to Payment";
+  clearMessage("orderMessage");
+  calculateTotal();
+  openModal("orderModal");
+}
+
+function calculateTotal() {
+  const quantity = Number(document.getElementById("orderQuantity").value || 0);
+  const total = quantity > 0 ? (quantity * selectedRate / 1000) : 0;
+  document.getElementById("orderTotal").textContent =
+    "GH₵" + total.toFixed(2);
+}
+
+async function submitOrder() {
+  const phone = document.getElementById("orderPhone").value.trim();
+  const link = document.getElementById("orderLink").value.trim();
+  const quantity = Number(document.getElementById("orderQuantity").value);
+  const button = document.getElementById("continuePay");
+
+  clearMessage("orderMessage");
+
+  if (!phone) return showMessage("orderMessage","Enter your phone number.");
+  if (!link || !/^https?:\/\//i.test(link)) {
+    return showMessage("orderMessage","Enter a valid TikTok link beginning with https://");
   }
-  if(estimate.amount < 1){
-    showMessage("orderMessage","The calculated amount is below GH₵1. Increase your quantity before payment.");
-    return;
+  if (!Number.isInteger(quantity) || quantity < 1 || quantity > 1000000) {
+    return showMessage("orderMessage","Quantity must be between 1 and 1,000,000.");
   }
 
-  const button = $("orderButton");
+  const estimatedTotal = quantity * selectedRate / 1000;
+  if (estimatedTotal < 1) {
+    return showMessage("orderMessage","The minimum Paystack payment is GH₵1. Increase your quantity to continue.");
+  }
+
   button.disabled = true;
-  button.textContent = "Creating Order...";
-  $("orderMessage").classList.add("hidden");
+  button.textContent = "Creating order...";
 
-  try{
-    const payload = {
-      contact:$("contact").value.trim(),
-      link:$("link").value.trim(),
-      service:$("service").value,
-      quantity:Number($("quantity").value),
-      details:$("details").value.trim()
-    };
-    const data = await api("/api/orders",{
+  try {
+    const result = await api("/api/orders",{
       method:"POST",
-      body:JSON.stringify(payload)
+      body:JSON.stringify({
+        contact:phone,
+        link:link,
+        service:selectedService,
+        quantity:quantity
+      })
     });
-    const code = data.order_code || data.code || data.order?.order_code;
-    if(!code) throw new Error("Order created but no Order ID was returned. Contact support.");
-    showMessage("orderMessage","Order created! Your Order ID is "+code+". Preparing payment...");
-    $("trackCode").value = code;
 
-    const payment = await api("/api/orders/"+encodeURIComponent(code)+"/pay",{
+    const order = result.order || result;
+    const code = result.order_code || result.code ||
+      order.order_code || order.code;
+
+    if (!code) {
+      throw new Error("Order created, but the order ID was not returned. Please contact support before trying again.");
+    }
+
+    button.textContent = "Opening payment...";
+
+    const payment = await api("/api/orders/" + encodeURIComponent(code) + "/pay",{
       method:"POST",
       body:JSON.stringify({})
     });
-    const paymentUrl = payment.authorization_url || payment.data?.authorization_url;
-    if(!paymentUrl) throw new Error("Order created, but payment link was not returned. Your Order ID is "+code+". Contact support.");
-    window.location.href = paymentUrl;
-  }catch(error){
-    showMessage("orderMessage",error.message);
-    button.disabled = false;
-    button.textContent = "Continue to Order";
-  }
-});
 
-async function trackOrder(){
-  const code = $("trackCode").value.trim();
-  if(!code){showMessage("trackResult","Enter your Order ID first.");return;}
-  showMessage("trackResult","Checking your order...");
-  try{
-    const data = await api("/api/orders/"+encodeURIComponent(code));
-    const order = data.order || data;
-    const status = order.status || "Unknown";
-    const payment = order.payment_status || (status === "Paid" ? "Paid" : "Not confirmed");
-    $("trackResult").innerHTML = "";
-    const lines = [
-      ["Order ID",order.order_code || code],
-      ["Service",order.service || "—"],
-      ["Quantity",order.quantity ?? "—"],
-      ["Amount",order.price_ghs != null ? money(order.price_ghs) : "—"],
-      ["Payment",payment],
-      ["Order Status",status]
-    ];
-    lines.forEach(([label,value])=>{
-      const p=document.createElement("p");
-      const b=document.createElement("strong");
-      b.textContent=label+": ";
-      p.appendChild(b);
-      p.appendChild(document.createTextNode(String(value)));
-      $("trackResult").appendChild(p);
-    });
-    $("trackResult").classList.remove("hidden");
-  }catch(error){
-    showMessage("trackResult",error.message);
+    const paymentUrl = payment.authorization_url ||
+      payment.data?.authorization_url ||
+      payment.order?.authorization_url;
+
+    if (!paymentUrl) {
+      throw new Error("Payment link was not returned. Your order ID is " + code + ". Contact support before placing another order.");
+    }
+
+    window.location.href = paymentUrl;
+
+  } catch(error) {
+    showMessage("orderMessage",error.message || "Unable to create your order.");
+    button.disabled = false;
+    button.textContent = "Continue to Payment";
   }
 }
 
-$("authForm").addEventListener("submit",async event=>{
-  event.preventDefault();
-  const button=$("authButton");
-  button.disabled=true;
-  button.textContent="Please wait...";
-  try{
-    const endpoint=authMode==="login"?"/api/auth/login":"/api/auth/register";
-    const data=await api(endpoint,{
-      method:"POST",
-      body:JSON.stringify({
-        phone:$("authPhone").value.trim(),
-        password:$("authPassword").value
-      })
-    });
-    showMessage("authMessage",data.message || (authMode==="login"?"You are signed in.":"Account created successfully."));
-    $("authPassword").value="";
-    loadHistory();
-  }catch(error){
-    showMessage("authMessage",error.message);
-  }finally{
-    button.disabled=false;
-    button.textContent=authMode==="login"?"Login":"Create Account";
-  }
-});
+function openAuth(mode="login") {
+  closeMenu();
+  setAuthMode(mode);
+  clearMessage("authMessage");
+  openModal("authModal");
+}
 
-async function loadHistory(){
-  const box=$("historyResult");
-  box.textContent="Loading your orders...";
-  try{
-    const data=await api("/api/customer/orders");
-    const orders=Array.isArray(data)?data:(data.orders || []);
-    box.innerHTML="";
-    if(!orders.length){
-      box.textContent="No orders found on this account yet. Orders placed before signing in may not appear here. Use Track Order for older guest orders.";
+function setAuthMode(mode) {
+  authMode = mode;
+  document.getElementById("loginTab").classList.toggle("active",mode==="login");
+  document.getElementById("registerTab").classList.toggle("active",mode==="register");
+  document.getElementById("authTitle").textContent =
+    mode==="login" ? "Welcome Back" : "Create Your Account";
+  document.getElementById("authSubmit").textContent =
+    mode==="login" ? "Login" : "Create Account";
+  clearMessage("authMessage");
+}
+
+async function submitAuth() {
+  const phone = document.getElementById("authPhone").value.trim();
+  const password = document.getElementById("authPassword").value;
+  const button = document.getElementById("authSubmit");
+
+  clearMessage("authMessage");
+
+  if (!phone || !password) {
+    return showMessage("authMessage","Enter your phone number and password.");
+  }
+
+  button.disabled = true;
+  button.textContent = "Please wait...";
+
+  try {
+    const endpoint = authMode==="login"
+      ? "/api/auth/login"
+      : "/api/auth/register";
+
+    const result = await api(endpoint,{
+      method:"POST",
+      body:JSON.stringify({phone,password})
+    });
+
+    currentUser = result.user || result.customer || {phone};
+    updateAccountUI();
+    closeModal("authModal");
+    alert(authMode==="login" ? "Login successful." : "Account created successfully.");
+
+  } catch(error) {
+    showMessage("authMessage",error.message || "Unable to complete account request.");
+  } finally {
+    button.disabled = false;
+    button.textContent = authMode==="login" ? "Login" : "Create Account";
+  }
+}
+
+function updateAccountUI() {
+  const loggedIn = !!currentUser;
+  document.getElementById("loginNav").textContent =
+    loggedIn ? "My Account" : "Login";
+  document.getElementById("loginNav").onclick =
+    loggedIn ? openHistory : () => openAuth("login");
+  document.getElementById("signupNav").style.display =
+    loggedIn ? "none" : "inline-block";
+  document.getElementById("logoutMenu").style.display =
+    loggedIn ? "block" : "none";
+}
+
+async function checkSession() {
+  try {
+    const result = await api("/api/auth/me");
+    currentUser = result.user || result.customer || null;
+  } catch(e) {
+    currentUser = null;
+  }
+  updateAccountUI();
+}
+
+async function logout() {
+  closeMenu();
+  try {
+    await api("/api/auth/logout",{method:"POST",body:JSON.stringify({})});
+  } catch(e) {}
+  currentUser = null;
+  updateAccountUI();
+  alert("You have been logged out.");
+}
+
+function showTrack() {
+  closeMenu();
+  document.getElementById("trackCode").value = "";
+  document.getElementById("trackResult").innerHTML = "";
+  openModal("trackModal");
+}
+
+async function trackOrder() {
+  const code = document.getElementById("trackCode").value.trim();
+  const resultBox = document.getElementById("trackResult");
+
+  if (!code) {
+    resultBox.innerHTML = '<div class="notice error">Enter your order ID.</div>';
+    return;
+  }
+
+  resultBox.innerHTML = '<div class="empty">Checking order...</div>';
+
+  try {
+    const data = await api("/api/orders/" + encodeURIComponent(code));
+    const order = data.order || data;
+
+    const service = safeText(order.service || "Order");
+    const status = safeText(order.status || "Processing");
+    const payment = safeText(order.payment_status || "Not available");
+    const quantity = safeText(order.quantity ?? "—");
+
+    resultBox.innerHTML = `
+      <div class="order-row">
+        <strong>${service}</strong><br>
+        Quantity: ${quantity}<br>
+        Order status: <span class="status">${status}</span><br>
+        Payment: ${payment}
+      </div>`;
+  } catch(error) {
+    resultBox.innerHTML =
+      '<div class="notice error">' + safeText(error.message) + '</div>';
+  }
+}
+
+async function openHistory() {
+  closeMenu();
+  openModal("historyModal");
+  const box = document.getElementById("historyContent");
+
+  if (!currentUser) {
+    box.innerHTML = '<div class="empty">Please login to view your orders.</div>';
+    return;
+  }
+
+  box.innerHTML = '<div class="empty">Loading your orders...</div>';
+
+  try {
+    const data = await api("/api/customer/orders");
+    const orders = data.orders || data.data?.orders || [];
+
+    if (!orders.length) {
+      box.innerHTML = '<div class="empty">You have no orders yet.</div>';
       return;
     }
-    orders.forEach(order=>{
-      const card=document.createElement("div");
-      card.style.cssText="padding:13px;border-bottom:1px solid #263451";
-      const title=document.createElement("strong");
-      title.textContent=(order.service || "Order")+" — "+(order.order_code || "");
-      const detail=document.createElement("p");
-      detail.className="notice";
-      detail.textContent="Quantity: "+(order.quantity ?? "—")+" · Amount: "+(order.price_ghs != null ? money(order.price_ghs) : "—")+" · Status: "+(order.status || "Unknown");
-      const track=document.createElement("button");
-      track.className="small-btn";
-      track.textContent="Track this order";
-      track.onclick=()=>{
-        $("trackCode").value=order.order_code || "";
-        showSection("track");
-        trackOrder();
-      };
-      card.append(title,detail,track);
-      box.appendChild(card);
-    });
-  }catch(error){
-    box.textContent=error.message+" Please log in first.";
+
+    box.innerHTML = orders.map(order => `
+      <div class="order-row">
+        <strong>${safeText(order.service || "Order")}</strong><br>
+        Order ID: ${safeText(order.order_code || order.code || "—")}<br>
+        Quantity: ${safeText(order.quantity ?? "—")}<br>
+        Amount: GH₵${safeText(order.price_ghs ?? "—")}<br>
+        Status: <span class="status">${safeText(order.status || order.payment_status || "Pending")}</span>
+      </div>
+    `).join("");
+
+  } catch(error) {
+    box.innerHTML = '<div class="notice error">' + safeText(error.message) + '</div>';
   }
 }
 
-async function logout(){
-  try{
-    const data=await api("/api/auth/logout",{method:"POST",body:JSON.stringify({})});
-    showMessage("authMessage",data.message || "You have been logged out.");
-    $("historyResult").textContent="Sign in to view your order history.";
-  }catch(error){
-    showMessage("authMessage",error.message);
-  }
+function safeText(value) {
+  return String(value).replace(/[&<>"']/g, char => ({
+    "&":"&amp;",
+    "<":"&lt;",
+    ">":"&gt;",
+    '"':"&quot;",
+    "'":"&#039;"
+  })[char]);
 }
+
+document.addEventListener("click",function(event){
+  const menu = document.getElementById("menu");
+  if (!menu.contains(event.target) &&
+      !event.target.closest(".icon-btn")) {
+    menu.classList.remove("show");
+  }
+});
+
+checkSession();
 </script>
 </body>
 </html>
-
