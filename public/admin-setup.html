@@ -4,124 +4,111 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>SavCel Hub Admin Setup</title>
+<title>SavCel Hub - Admin Setup</title>
 <style>
 *{box-sizing:border-box}
 body{
   margin:0;
   min-height:100vh;
-  display:grid;
-  place-items:center;
+  display:flex;
+  align-items:center;
+  justify-content:center;
   padding:20px;
   font-family:Arial,sans-serif;
-  background:linear-gradient(135deg,#f4fbff,#dcefff);
-  color:#18334d
+  background:linear-gradient(135deg,#eaf6ff,#fff);
+  color:#17324f
 }
 .card{
+  background:white;
   width:100%;
-  max-width:430px;
+  max-width:420px;
   padding:30px;
   border-radius:22px;
-  background:white;
-  box-shadow:0 15px 45px #168ee820
+  box-shadow:0 15px 45px #12345618
 }
-.logo{font-size:25px;font-weight:900;color:#168ee8}
-h2{margin-top:28px}
-p{color:#718096;line-height:1.6}
+h1{color:#1676d2;font-size:25px}
+p{color:#687d91;line-height:1.6}
 input{
   width:100%;
-  padding:15px;
+  padding:16px;
   margin:15px 0;
-  border:1px solid #cbdff0;
-  border-radius:11px;
-  font-size:15px
+  border:1px solid #c9dced;
+  border-radius:12px;
+  font-size:16px
 }
 button{
   width:100%;
-  padding:15px;
-  border:0;
-  border-radius:11px;
-  background:#168ee8;
+  padding:16px;
+  background:#1676d2;
   color:white;
+  border:0;
+  border-radius:12px;
   font-weight:bold;
-  font-size:15px
+  font-size:16px
 }
-#message{margin-top:18px;font-size:14px}
+button:disabled{opacity:.6}
+#message{margin-top:18px;overflow-wrap:anywhere}
 </style>
 </head>
 <body>
 <div class="card">
-  <div class="logo">SavCel Hub</div>
-  <h2>Administrator Setup</h2>
-  <p>Enter your private setup token to activate administrator access for your logged-in account.</p>
+  <h1>Administrator Setup</h1>
+  <p>Activate your SavCel Hub administrator account securely.</p>
 
-  <form id="setupForm">
+  <form id="form">
     <input
       id="token"
       type="password"
-      placeholder="Private admin setup token"
+      placeholder="Enter your Render setup token"
       autocomplete="off"
       required
     >
-    <button id="submitButton" type="submit">
-      Activate Admin Account
-    </button>
+    <button id="button" type="submit">Activate Admin</button>
   </form>
 
   <div id="message"></div>
 </div>
 
 <script>
-const form = document.getElementById("setupForm");
+const form = document.getElementById("form");
+const button = document.getElementById("button");
 const message = document.getElementById("message");
-const button = document.getElementById("submitButton");
 
 form.addEventListener("submit", async function(event){
   event.preventDefault();
 
   const token = document.getElementById("token").value.trim();
 
-  if(!token){
-    message.textContent = "Enter your setup token.";
-    return;
-  }
-
   button.disabled = true;
-  button.textContent = "Activating...";
-  message.textContent = "";
+  message.textContent = "Verifying...";
 
-  try{
-    const response = await fetch("/api/admin/setup",{
-      method:"POST",
-      credentials:"same-origin",
-      headers:{
-        "Content-Type":"application/json",
-        "x-admin-setup-token":token
+  try {
+    const response = await fetch("/api/admin/setup", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: {
+        "Content-Type": "application/json",
+        "x-admin-setup-token": token
       },
-      body:JSON.stringify({})
+      body: "{}"
     });
 
     const result = await response.json();
 
-    if(response.ok && result.success){
-      message.textContent = result.message;
-      message.style.color = "#168447";
-      document.getElementById("token").value = "";
-
-      setTimeout(function(){
-        window.location.href = "/admin";
-      },1500);
-    }else{
-      message.textContent = result.message || "Admin setup failed.";
-      message.style.color = "#d33";
+    if (!response.ok || !result.success) {
+      message.textContent = result.message || "Activation failed.";
+      button.disabled = false;
+      return;
     }
-  }catch(error){
-    message.textContent = "Connection error. Please try again.";
-    message.style.color = "#d33";
-  }
 
-  button.disabled = false;
-  button.textContent = "Activate Admin Account";
+    message.textContent = "Admin activated successfully!";
+
+    window.location.href = "/admin";
+
+  } catch(error) {
+    message.textContent = "Connection error. Please try again.";
+    button.disabled = false;
+  }
 });
 </script>
 </body>
