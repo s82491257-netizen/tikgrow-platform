@@ -24,12 +24,23 @@ for (const key of required) {
 
 const PRICES = {
   "TikTok Likes": 25,
-  "Comments": 35,
-  "Followers": 45,
+  "Comments": 250,
+  "Followers": 100,
   "Video Views": 10,
-  "Shares": 35,
-  "LIVE Promotion": 55
+  "Saves": 35,
+  "LIVE Promotion": 150
 };
+
+const MINIMUMS = {
+  "TikTok Likes": 10,
+  "Comments": 4000,
+  "Followers": 10,
+  "Video Views": 100,
+  "Saves": 100,
+  "LIVE Promotion": 50
+};
+
+const SERVICES = Object.keys(PRICES);
 
 const SERVICES = Object.keys(PRICES);
 
@@ -58,9 +69,16 @@ function calculatePrice(service, quantity) {
     throw new Error("Please select a valid service.");
   }
 
+  const minimum = MINIMUMS[service] || 1;
+
+  if (quantity < minimum) {
+    throw new Error(
+      service + " minimum order is " + minimum.toLocaleString() + "."
+    );
+  }
+
   return Math.round(PRICES[service] * quantity / 1000 * 100) / 100;
 }
-
 function normalizePhone(value) {
   let phone = String(value || "").replace(/[\s()-]/g, "");
 
