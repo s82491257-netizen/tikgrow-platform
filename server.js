@@ -1,1427 +1,889 @@
 
 const express = require("express");
 const { Pool } = require("pg");
-const path = require("path");
 const crypto = require("crypto");
-const { promisify } = require("util");
+const multer = require("multer");
+const cloudinary = require("cloudinary").v2;
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const scrypt = promisify(crypto.scrypt);
 
-process.exit(// TIKGROW CUSTOMER PRICES PER 1,000
-const PRICES = {
-  "TikTok Likes": 25,
-  "Comments": 250,
-  "Followers": 100,
-  "Video Views": 10,
-  "Saves": 35,
-  "LIVE Promotion": 150
-};
-
-// MINIMUM ORDER QUANTITIES
-const MINIMUMS = {
-  "TikTok Likes": 10,
-  "Comments": 4000,
-  "Followers": 10,
-  "Video Views": 100,
-  "Saves": 100,
-  "LIVE Promotion": 50
-};
-
-const SERVICES = Object.keys(PRICES);
-
-// DATABASE
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: process.env.DATABASE_URL.includes("localhost")
-    ? false
-    : { rejectUnauthorized: false }
+  ssl: process.env.DATABASE_URL
+    ? { rejectUnauthorized: false }
+    : false
 });
 
-// MIDDLEWARE
-app.use(express.json({
-  verify: (req, res, buffer) => {
-    req.rawBody = Buffer.from(buffer);
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
+});
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    if (!file.mimetype.startsWith("image/")) {
+      return cb(new Error("Only image files are allowed."));
+    }
+    cb(null, true);
   }
-}));
+});
 
-app.use(express.urlencoded({ extended: true }));
+app.post(
+  "/api/paystack/webhook",
+  express.raw({ type: "application/json" }),
+  async (req, res) => {
+    try {
+      const signature = req.headers["x-paystack-signature"];
+      const secret = process.env.PAYSTACK_SECRET_KEY;
 
-app.use(express.static(path.join(__dirname, "public")));
+      if (!secret || !signature) return res.sendStatus(401);
 
-// PRICE CALCULATION
-function calculatePrice(service, quantity) {
-  if (
-    !Number.isSafeInteger(quantity) ||
-    quantity < 1 ||
-    quantity > 1000000
-  ) {
-    throw new Error(
-      "Quantity must be between 1 and 1,000,000."
-    );
-  }
+      const expected = crypto
+        .createHmac("sha512", secret)
+        .update(req.body)
+        .digest("hex");
 
-  if (!Object.prototype.hasOwnProperty.call(PRICES, service)) {
-    throw new Error("Please select a valid service.");
-  }
+      const a = Buffer.from(signature);
+      const b = Buffer.from(expected);
 
-  const minimum = MINIMUMS[service] || 1;
+      if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
+        return res.sendStatus(401);
+      }
 
-  if (quantity < minimum) {
-    throw new Error(
-      service + " minimum order is " +
-      minimum.toLocaleString() + "."
-    );
-  }
+      const event = JSON.parse(req.body.toString());
 
-  return Math.round(
-    PRICES[service] * quantity / 1000 * 100
-  ) / 100;
-}
+      if (event.event === "charge.success") {
+        await markOrderPaid(event.data.reference);
+      }
 
-// PHONE NUMBER
-function normalizePhone(value) {
-  let phone = String(value || "").replace(/[\s()-]/g, "");
-
-  if (/^0\d{9}$/.test(phone)) {
-    phone = "+233" + phone.slice(1);
-  } else if (/^233\d{9}$/.test(phone)) {
-    phone = "+" + phone;
-  }
-
-  if (!/^\+[1-9]\d{7,14}$/.test(phone)) {
-    throw new Error(
-      "Enter a valid phone number, including country code."
-    );
-  }
-
-  return phone;
-}
-
-// ORDER CODE
-function makeOrderCode() {
-  return "TG-" +
-    crypto.randomBytes(5).toString("hex").toUpperCase();
-}
-
-// VALIDATE TIKTOK LINK
-function validTikTokLink(value) {
-  try {
-    const url = new URL(value);
-
-    return url.protocol === "https:" &&
-      [
-        "tiktok.com",
-        "www.tiktok.com",
-        "m.tiktok.com",
-        "vm.tiktok.com",
-        "vt.tiktok.com"
-      ].includes(url.hostname);
-  } catch {
-    return false;
-  }
-}
-
-// COOKIE HELPERS
-function getCookie(req, name) {
-  const cookies = String(
-    req.headers.cookie || ""
-  ).split(";");
-
-  for (const cookie of cookies) {
-    const index = cookie.indexOf("=");
-
-    if (index < 0) continue;
-
-    if (cookie.slice(0, index).trim() === name) {
-      return decodeURIComponent(
-        cookie.slice(index + 1).trim()
-      );
+      res.sendStatus(200);
+    } catch (error) {
+      console.error("Webhook error:", error.message);
+      res.sendStatus(500);
     }
   }
+);
 
-  return null;
+app.use(express.json({ limit: "2mb" }));
+app.use(express.urlencoded({ extended: true }));
+app.use(express.static("public"));
+
+function requiredEnvironment() {
+  const required = [
+    "DATABASE_URL",
+    "ADMIN_SETUP_TOKEN",
+    "PAYSTACK_SECRET_KEY",
+    "CLOUDINARY_CLOUD_NAME",
+    "CLOUDINARY_API_KEY",
+    "CLOUDINARY_API_SECRET",
+    "SESSION_SECRET"
+  ];
+
+  const missing = required.filter(key => !process.env[key]);
+
+  if (missing.length) {
+    throw new Error("Missing environment variables: " + missing.join(", "));
+  }
 }
 
-function setSessionCookie(res, token) {
-  res.setHeader(
-    "Set-Cookie",
-    "tg_session=" + encodeURIComponent(token) +
-    "; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=2592000"
-  );
-}
+function makeToken(payload) {
+  const data = Buffer.from(JSON.stringify({
+    ...payload,
+    expires: Date.now() + 7 * 24 * 60 * 60 * 1000
+  })).toString("base64url");
 
-function clearSessionCookie(res) {
-  res.setHeader(
-    "Set-Cookie",
-    "tg_session=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0"
-  );
-}
-
-// CREATE CUSTOMER SESSION
-async function createCustomerSession(userId, res) {
-  const token = crypto.randomBytes(32).toString("hex");
-
-  const tokenHash = crypto
-    .createHash("sha256")
-    .update(token)
+  const signature = crypto
+    .createHmac("sha256", process.env.SESSION_SECRET)
+    .update(data)
     .digest("hex");
 
-  await pool.query(
-    `INSERT INTO customer_sessions
-     (token_hash, user_id, expires_at)
-     VALUES ($1, $2, NOW() + INTERVAL '30 days')`,
-    [tokenHash, userId]
-  );
-
-  setSessionCookie(res, token);
+  return data + "." + signature;
 }
 
-// GET LOGGED-IN CUSTOMER
-async function getCustomer(req) {
-  const token = getCookie(req, "tg_session");
+function verifyToken(token) {
+  try {
+    const [data, signature] = token.split(".");
+    if (!data || !signature) return null;
 
-  if (!token || !/^[a-f0-9]{64}$/i.test(token)) {
+    const expected = crypto
+      .createHmac("sha256", process.env.SESSION_SECRET)
+      .update(data)
+      .digest("hex");
+
+    const a = Buffer.from(signature);
+    const b = Buffer.from(expected);
+
+    if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
+      return null;
+    }
+
+    const payload = JSON.parse(
+      Buffer.from(data, "base64url").toString()
+    );
+
+    if (payload.expires < Date.now()) return null;
+
+    return payload;
+  } catch {
     return null;
   }
-
-  const tokenHash = crypto
-    .createHash("sha256")
-    .update(token)
-    .digest("hex");
-
-  const result = await pool.query(
-    `SELECT u.id, u.phone
-     FROM customer_sessions s
-     JOIN customer_users u ON u.id = s.user_id
-     WHERE s.token_hash = $1
-       AND s.expires_at > NOW()
-     LIMIT 1`,
-    [tokenHash]
-  );
-
-  return result.rows[0] || null;
 }
 
-// ADMIN AUTHENTICATION
-async function adminOnly(req, res, next) {
-  const token = req.headers["x-admin-token"];
+function customerAuth(req, res, next) {
+  const header = req.headers.authorization || "";
+  const token = header.startsWith("Bearer ")
+    ? header.slice(7)
+    : "";
 
-  if (
-    !token ||
-    token !== process.env.ADMIN_SETUP_TOKEN
-  ) {
-    return res.status(401).json({
-      error: "Unauthorized admin access."
-    });
+  const payload = verifyToken(token);
+
+  if (!payload || !payload.userId) {
+    return res.status(401).json({ error: "Please log in again." });
+  }
+
+  req.user = payload;
+  next();
+}
+
+function adminAuth(req, res, next) {
+  const token = req.headers["x-admin-token"] || "";
+  const expected = process.env.ADMIN_SETUP_TOKEN || "";
+
+  const a = Buffer.from(String(token));
+  const b = Buffer.from(String(expected));
+
+  if (!expected || a.length !== b.length ||
+      !crypto.timingSafeEqual(a, b)) {
+    return res.status(401).json({ error: "Admin access denied." });
   }
 
   next();
 }
 
-// SMM AFRICA API CONNECTION
-async function smmRequest(action, params = {}) {
-  const apiUrl =
-    process.env.SMM_API_URL ||
-    "https://smm.africa/api/v3";
-
-  const apiKey = process.env.SMM_API_KEY;
-
-  if (!apiKey) {
-    throw new Error(
-      "SMM_API_KEY is not configured in Render."
-    );
-  }
-
-  const allowedActions = [
-    "balance",
-    "services",
-    "add",
-    "status",
-    "refill",
-    "cancel"
-  ];
-
-  if (!allowedActions.includes(action)) {
-    throw new Error("Unsupported SMM API action.");
-  }
-
-  const url = new URL(apiUrl);
-
-  if (
-    url.protocol !== "https:" ||
-    url.hostname !== "smm.africa"
-  ) {
-    throw new Error(
-      "Invalid SMM API URL configuration."
-    );
-  }
-
-  if (
-    !params ||
-    typeof params !== "object" ||
-    Array.isArray(params)
-  ) {
-    throw new Error("Invalid SMM request parameters.");
-  }
-
-  const response = await fetch(url.toString(), {
-    method: "POST",
-    headers: {
-      "Authorization": "Bearer " + apiKey,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      ...params,
-      action
-    }),
-    signal: AbortSignal.timeout(20000)
-  });
-
-  const responseText = await response.text();
-
-  let data;
-
-  try {
-    data = JSON.parse(responseText);
-  } catch {
-    console.error(
-      "SMM provider returned an invalid response."
+async function initializeDatabase() {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS store_users (
+      id SERIAL PRIMARY KEY,
+      name TEXT NOT NULL,
+      email TEXT UNIQUE NOT NULL,
+      password_hash TEXT NOT NULL,
+      created_at TIMESTAMPTZ DEFAULT NOW()
     );
 
-    throw new Error(
-      "The provider returned an unexpected response."
+    CREATE TABLE IF NOT EXISTS store_products (
+      id SERIAL PRIMARY KEY,
+      name TEXT NOT NULL,
+      description TEXT DEFAULT '',
+      category TEXT DEFAULT 'General',
+      price_ghs NUMERIC(12,2) NOT NULL CHECK (price_ghs >= 0),
+      stock INTEGER NOT NULL DEFAULT 0 CHECK (stock >= 0),
+      image_url TEXT DEFAULT '',
+      active BOOLEAN DEFAULT TRUE,
+      created_at TIMESTAMPTZ DEFAULT NOW()
     );
-  }
 
-  if (
-    !response.ok ||
-    data.error ||
-    data.success === false
-  ) {
-    console.error("SMM provider error:", {
-      status: response.status,
-      code: data.code || "UNKNOWN",
-      request_id: data.request_id || null
-    });
-
-    throw new Error(
-      "SMM provider request failed. Check the provider account."
+    CREATE TABLE IF NOT EXISTS store_orders (
+      id SERIAL PRIMARY KEY,
+      order_code TEXT UNIQUE NOT NULL,
+      user_id INTEGER REFERENCES store_users(id),
+      email TEXT NOT NULL,
+      phone TEXT NOT NULL,
+      delivery_address TEXT NOT NULL,
+      amount_ghs NUMERIC(12,2) NOT NULL,
+      payment_reference TEXT UNIQUE NOT NULL,
+      payment_status TEXT DEFAULT 'Pending',
+      order_status TEXT DEFAULT 'Awaiting Payment',
+      created_at TIMESTAMPTZ DEFAULT NOW()
     );
-  }
 
-  return data;
+    CREATE TABLE IF NOT EXISTS store_order_items (
+      id SERIAL PRIMARY KEY,
+      order_id INTEGER REFERENCES store_orders(id),
+      product_id INTEGER REFERENCES store_products(id),
+      product_name TEXT NOT NULL,
+      quantity INTEGER NOT NULL,
+      unit_price NUMERIC(12,2) NOT NULL
+    );
+  `);
+
+  console.log("Store database ready.");
 }
 
+async function hashPassword(password) {
+  const salt = crypto.randomBytes(16).toString("hex");
 
-// TIKGROW TO SMM AFRICA SERVICE MAPPING
-const SMM_SERVICE_MAP = {
-  "TikTok Likes": 1350,
-  "Comments": 1403,
-  "Followers": 1068,
-  "Video Views": 1804,
-  "Saves": 3417,
-  "LIVE Promotion": 3392
-};
+  const hash = await new Promise((resolve, reject) => {
+    crypto.scrypt(password, salt, 64, (err, key) => {
+      if (err) reject(err);
+      else resolve(key.toString("hex"));
+    });
+  });
 
-// AUTOMATIC SMM ORDER SUBMISSION
-async function submitSmmOrder(orderCode) {
-  if (process.env.SMM_AUTO_DELIVERY_ENABLED !== "true") {
-    return { submitted: false, reason: "Automatic delivery is disabled." };
-  }
+  return salt + ":" + hash;
+}
 
-  const client = await pool.connect();
-  let order;
-  let payload;
+async function checkPassword(password, stored) {
+  const [salt, original] = stored.split(":");
 
+  const hash = await new Promise((resolve, reject) => {
+    crypto.scrypt(password, salt, 64, (err, key) => {
+      if (err) reject(err);
+      else resolve(key);
+    });
+  });
+
+  const a = Buffer.from(original, "hex");
+
+  return a.length === hash.length &&
+    crypto.timingSafeEqual(a, hash);
+}
+
+// CUSTOMER REGISTRATION
+
+app.post("/api/auth/register", async (req, res) => {
   try {
-    await client.query("BEGIN");
+    const { name, email, password } = req.body;
 
-    const result = await client.query(
-      `SELECT * FROM orders
-       WHERE order_code = $1
-       FOR UPDATE`,
-      [orderCode]
+    if (!name || !email || !password || password.length < 8) {
+      return res.status(400).json({
+        error: "Enter your name, email and a password of at least 8 characters."
+      });
+    }
+
+    const normalizedEmail = String(email).trim().toLowerCase();
+    const passwordHash = await hashPassword(password);
+
+    const result = await pool.query(
+      `INSERT INTO store_users (name,email,password_hash)
+       VALUES ($1,$2,$3)
+       RETURNING id,name,email`,
+      [String(name).trim(), normalizedEmail, passwordHash]
+    );
+
+    const user = result.rows[0];
+
+    res.json({
+      token: makeToken({ userId: user.id }),
+      user
+    });
+  } catch (error) {
+    if (error.code === "23505") {
+      return res.status(409).json({ error: "Email already registered." });
+    }
+
+    console.error(error);
+    res.status(500).json({ error: "Registration failed." });
+  }
+});
+
+// CUSTOMER LOGIN
+
+app.post("/api/auth/login", async (req, res) => {
+  try {
+    const email = String(req.body.email || "").trim().toLowerCase();
+    const password = String(req.body.password || "");
+
+    const result = await pool.query(
+      "SELECT * FROM store_users WHERE email=$1",
+      [email]
+    );
+
+    const user = result.rows[0];
+
+    if (!user || !(await checkPassword(password, user.password_hash))) {
+      return res.status(401).json({ error: "Incorrect email or password." });
+    }
+
+    res.json({
+      token: makeToken({ userId: user.id }),
+      user: { id: user.id, name: user.name, email: user.email }
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Login failed." });
+  }
+});
+
+// PUBLIC PRODUCT LIST
+
+app.get("/api/products", async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT id,name,description,category,price_ghs,stock,image_url
+      FROM store_products
+      WHERE active=TRUE
+      ORDER BY created_at DESC
+    `);
+
+    res.json({ products: result.rows });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Could not load products." });
+  }
+});
+
+// SINGLE PRODUCT
+
+app.get("/api/products/:id", async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT id,name,description,category,price_ghs,stock,image_url
+       FROM store_products
+       WHERE id=$1 AND active=TRUE`,
+      [req.params.id]
     );
 
     if (!result.rows.length) {
-      throw new Error("Order not found.");
+      return res.status(404).json({ error: "Product not found." });
     }
 
-    order = result.rows[0];
+    res.json({ product: result.rows[0] });
+  } catch (error) {
+    res.status(500).json({ error: "Could not load product." });
+  }
+});
 
-    if (!order.paid_at) {
-      throw new Error("Cannot submit an unpaid order.");
+// ADMIN: LIST PRODUCTS
+
+app.get("/api/admin/products", adminAuth, async (req, res) => {
+  try {
+    const result = await pool.query(
+      "SELECT * FROM store_products ORDER BY created_at DESC"
+    );
+
+    res.json({ products: result.rows });
+  } catch (error) {
+    res.status(500).json({ error: "Could not load products." });
+  }
+});
+
+// ADMIN: UPLOAD PRODUCT IMAGE
+
+app.post(
+  "/api/admin/upload",
+  adminAuth,
+  upload.single("image"),
+  async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: "Choose an image first." });
+      }
+
+      const imageUrl = await new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+          {
+            folder: "tikgrow-products",
+            resource_type: "image"
+          },
+          (error, result) => {
+            if (error) reject(error);
+            else resolve(result.secure_url);
+          }
+        );
+
+        stream.end(req.file.buffer);
+      });
+
+      res.json({ image_url: imageUrl });
+    } catch (error) {
+      console.error("Image upload:", error.message);
+      res.status(500).json({ error: "Image upload failed." });
+    }
+  }
+);
+
+// ADMIN: ADD PRODUCT
+
+app.post("/api/admin/products", adminAuth, async (req, res) => {
+  try {
+    const { name, description, category, price_ghs, stock, image_url } = req.body;
+
+    const price = Number(price_ghs);
+    const quantity = Number(stock);
+
+    if (!name || !Number.isFinite(price) || price < 0 ||
+        !Number.isInteger(quantity) || quantity < 0) {
+      return res.status(400).json({ error: "Check product details and stock." });
     }
 
-    if (order.smm_order_id) {
-      await client.query("COMMIT");
-      return {
-        submitted: true,
-        already_submitted: true,
-        provider_order_id: order.smm_order_id
-      };
+    const result = await pool.query(
+      `INSERT INTO store_products
+       (name,description,category,price_ghs,stock,image_url)
+       VALUES ($1,$2,$3,$4,$5,$6)
+       RETURNING *`,
+      [
+        String(name).trim(),
+        description || "",
+        category || "General",
+        price,
+        quantity,
+        image_url || ""
+      ]
+    );
+
+    res.json({ product: result.rows[0] });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Could not add product." });
+  }
+});
+
+// ADMIN: EDIT PRODUCT
+
+app.patch("/api/admin/products/:id", adminAuth, async (req, res) => {
+  try {
+    const { name, description, category, price_ghs, stock, image_url, active } = req.body;
+
+    const result = await pool.query(
+      `UPDATE store_products SET
+       name=COALESCE($1,name),
+       description=COALESCE($2,description),
+       category=COALESCE($3,category),
+       price_ghs=COALESCE($4,price_ghs),
+       stock=COALESCE($5,stock),
+       image_url=COALESCE($6,image_url),
+       active=COALESCE($7,active)
+       WHERE id=$8 RETURNING *`,
+      [
+        name ?? null,
+        description ?? null,
+        category ?? null,
+        price_ghs === undefined ? null : Number(price_ghs),
+        stock === undefined ? null : Number(stock),
+        image_url ?? null,
+        active ?? null,
+        req.params.id
+      ]
+    );
+
+    if (!result.rows.length) {
+      return res.status(404).json({ error: "Product not found." });
     }
 
-    const serviceId = SMM_SERVICE_MAP[order.service];
+    res.json({ product: result.rows[0] });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Could not update product." });
+  }
+});
 
-    if (!serviceId) {
-      throw new Error("No provider service mapping for this order.");
+// ADMIN: DELETE PRODUCT (SOFT DELETE)
+
+app.delete("/api/admin/products/:id", adminAuth, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `UPDATE store_products SET active=FALSE
+       WHERE id=$1 RETURNING id`,
+      [req.params.id]
+    );
+
+    if (!result.rows.length) {
+      return res.status(404).json({ error: "Product not found." });
     }
 
-    if (order.smm_payload) {
-      payload = order.smm_payload;
-    } else {
-      const idempotencyKey =
-        "TIKGROW-" + crypto.randomBytes(16).toString("hex");
+    res.json({ message: "Product removed from store." });
+  } catch (error) {
+    res.status(500).json({ error: "Could not remove product." });
+  }
+});
 
-      payload = {
-        service: serviceId,
-        link: order.tiktok_link,
-        quantity: Number(order.quantity),
-        idempotency_key: idempotencyKey
-      };
+// CREATE PAYSTACK CHECKOUT
 
+app.post("/api/checkout", customerAuth, async (req, res) => {
+  const client = await pool.connect();
+
+  try {
+    const { items, phone, delivery_address } = req.body;
+
+    if (!Array.isArray(items) || !items.length || items.length > 50) {
+      return res.status(400).json({ error: "Your cart is empty or invalid." });
+    }
+
+    if (!phone || !delivery_address) {
+      return res.status(400).json({
+        error: "Enter your phone number and delivery address."
+      });
+    }
+
+    const userResult = await pool.query(
+      "SELECT id,name,email FROM store_users WHERE id=$1",
+      [req.user.userId]
+    );
+
+    if (!userResult.rows.length) {
+      return res.status(401).json({ error: "Customer account not found." });
+    }
+
+    const user = userResult.rows[0];
+
+    await client.query("BEGIN");
+
+    const cleanItems = new Map();
+
+    for (const item of items) {
+      const id = Number(item.product_id);
+      const quantity = Number(item.quantity);
+
+      if (!Number.isInteger(id) || !Number.isInteger(quantity) ||
+          quantity < 1 || quantity > 1000) {
+        throw new Error("Invalid cart quantity.");
+      }
+
+      cleanItems.set(id, (cleanItems.get(id) || 0) + quantity);
+    }
+
+    let total = 0;
+    const selected = [];
+
+    for (const [id, quantity] of cleanItems) {
+      const result = await client.query(
+        `SELECT * FROM store_products
+         WHERE id=$1 AND active=TRUE FOR UPDATE`,
+        [id]
+      );
+
+      const product = result.rows[0];
+
+      if (!product) throw new Error("A product in your cart is unavailable.");
+      if (product.stock < quantity) {
+        throw new Error("Not enough stock for " + product.name);
+      }
+
+      const price = Number(product.price_ghs);
+      total += price * quantity;
+
+      selected.push({ product, quantity, price });
+    }
+
+    if (!Number.isFinite(total) || total <= 0) {
+      throw new Error("Invalid order total.");
+    }
+
+    const reference = "TGSTORE-" + crypto.randomUUID();
+
+    const orderResult = await client.query(
+      `INSERT INTO store_orders
+       (order_code,user_id,email,phone,delivery_address,
+        amount_ghs,payment_reference)
+       VALUES ($1,$2,$3,$4,$5,$6,$7)
+       RETURNING id,order_code`,
+      [
+        reference,
+        user.id,
+        user.email,
+        String(phone).trim(),
+        String(delivery_address).trim(),
+        total.toFixed(2),
+        reference
+      ]
+    );
+
+    const order = orderResult.rows[0];
+
+    for (const item of selected) {
       await client.query(
-        `UPDATE orders
-         SET smm_service_id = $1,
-             smm_idempotency_key = $2,
-             smm_payload = $3,
-             smm_status = 'Submitting',
-             smm_error = NULL
-         WHERE id = $4`,
+        `INSERT INTO store_order_items
+         (order_id,product_id,product_name,quantity,unit_price)
+         VALUES ($1,$2,$3,$4,$5)`,
         [
-          serviceId,
-          idempotencyKey,
-          JSON.stringify(payload),
-          order.id
+          order.id,
+          item.product.id,
+          item.product.name,
+          item.quantity,
+          item.price
         ]
       );
     }
 
     await client.query("COMMIT");
 
+    const paystackResponse = await fetch(
+      "https://api.paystack.co/transaction/initialize",
+      {
+        method: "POST",
+        headers: {
+          Authorization: "Bearer " + process.env.PAYSTACK_SECRET_KEY,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          email: user.email,
+          amount: Math.round(total * 100),
+          currency: "GHS",
+          reference,
+          callback_url:
+            process.env.PAYSTACK_CALLBACK_URL ||
+            (process.env.APP_URL
+              ? process.env.APP_URL + "/payment-callback.html"
+              : undefined),
+          metadata: {
+            order_code: order.order_code,
+            customer_id: user.id
+          }
+        })
+      }
+    );
+
+    const payment = await paystackResponse.json();
+
+    if (!paystackResponse.ok || !payment.status ||
+        !payment.data?.authorization_url) {
+      await pool.query(
+        `UPDATE store_orders SET order_status='Payment Initialization Failed'
+         WHERE id=$1 AND payment_status='Pending'`,
+        [order.id]
+      );
+
+      return res.status(502).json({
+        error: payment.message || "Could not start Paystack checkout."
+      });
+    }
+
+    res.json({
+      order_code: order.order_code,
+      reference,
+      authorization_url: payment.data.authorization_url,
+      amount_ghs: total.toFixed(2)
+    });
   } catch (error) {
-    await client.query("ROLLBACK");
-    throw error;
+    try { await client.query("ROLLBACK"); } catch {}
+    console.error("Checkout:", error.message);
+    res.status(400).json({ error: error.message || "Checkout failed." });
   } finally {
     client.release();
   }
-
-  try {
-    // Verify the mapped service still exists in the live catalogue.
-    const services = await smmRequest("services");
-
-    if (!Array.isArray(services)) {
-      throw new Error("Invalid provider service catalogue.");
-    }
-
-    const liveService = services.find(
-      item => Number(item.service) === Number(payload.service)
-    );
-
-    if (
-      !liveService ||
-      String(liveService.type || "").toLowerCase() !== "default"
-    ) {
-      throw new Error("Mapped provider service is unavailable or unsupported.");
-    }
-
-    if (
-      Number(payload.quantity) < Number(liveService.min) ||
-      Number(payload.quantity) > Number(liveService.max)
-    ) {
-      throw new Error("Order quantity is outside provider limits.");
-    }
-
-    const result = await smmRequest("add", payload);
-
-    if (!result.order) {
-      throw new Error("Provider did not return an order ID.");
-    }
-
-    await pool.query(
-      `UPDATE orders
-       SET smm_order_id = $1,
-           smm_status = $2,
-           smm_charged_usd = $3,
-           smm_submitted_at = NOW(),
-           smm_error = NULL,
-           status = 'In Progress'
-       WHERE order_code = $4`,
-      [
-        String(result.order),
-        result.queued ? "Queued" : "Submitted",
-        result.charged == null ? null : Number(result.charged),
-        orderCode
-      ]
-    );
-
-    return {
-      submitted: true,
-      provider_order_id: String(result.order),
-      status: result.queued ? "Queued" : "Submitted"
-    };
-
-  } catch (error) {
-    await pool.query(
-      `UPDATE orders
-       SET smm_status = 'Failed',
-           smm_error = $1
-       WHERE order_code = $2
-         AND smm_order_id IS NULL`,
-      [String(error.message).slice(0, 500), orderCode]
-    );
-    throw error;
-  }
-}
-   
-// DATABASE SETUP
-async function initializeDatabase() {
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS orders (
-      id SERIAL PRIMARY KEY,
-      order_code TEXT UNIQUE NOT NULL,
-      customer_name TEXT NOT NULL DEFAULT 'Customer',
-      contact TEXT NOT NULL,
-      service TEXT NOT NULL,
-      tiktok_link TEXT NOT NULL,
-      details TEXT,
-      status TEXT NOT NULL DEFAULT 'New',
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-    )
-  `);
-
-  await pool.query(`
-    ALTER TABLE orders
-    ADD COLUMN IF NOT EXISTS price_ghs NUMERIC(12,2) DEFAULT 0
-  `);
-
-  await pool.query(`
-    ALTER TABLE orders
-    ADD COLUMN IF NOT EXISTS payment_reference TEXT
-  `);
-
-  await pool.query(`
-    ALTER TABLE orders
-    ADD COLUMN IF NOT EXISTS paid_at TIMESTAMPTZ
-  `);
-
-  await pool.query(`
-    ALTER TABLE orders
-    ADD COLUMN IF NOT EXISTS quantity INTEGER DEFAULT 1000
-  `);
-
-  // SMM AFRICA AUTOMATIC DELIVERY TRACKING
-  await pool.query(`
-    ALTER TABLE orders
-    ADD COLUMN IF NOT EXISTS smm_service_id INTEGER
-  `);
-
-  await pool.query(`
-    ALTER TABLE orders
-    ADD COLUMN IF NOT EXISTS smm_order_id TEXT
-  `);
-
-  await pool.query(`
-    ALTER TABLE orders
-    ADD COLUMN IF NOT EXISTS smm_idempotency_key TEXT
-  `);
-
-  await pool.query(`
-    ALTER TABLE orders
-    ADD COLUMN IF NOT EXISTS smm_payload JSONB
-  `);
-
-  await pool.query(`
-    ALTER TABLE orders
-    ADD COLUMN IF NOT EXISTS smm_status TEXT DEFAULT 'Not submitted'
-  `);
-
-  await pool.query(`
-    ALTER TABLE orders
-    ADD COLUMN IF NOT EXISTS smm_error TEXT
-  `);
-
-  await pool.query(`
-    ALTER TABLE orders
-    ADD COLUMN IF NOT EXISTS smm_submitted_at TIMESTAMPTZ
-  `);
-
-  await pool.query(`
-    ALTER TABLE orders
-    ADD COLUMN IF NOT EXISTS smm_charged_usd NUMERIC(14,6)
-  `);
-
-  await pool.query(`
-    ALTER TABLE orders
-    ADD COLUMN IF NOT EXISTS smm_last_checked_at TIMESTAMPTZ
-  `);
-
-  await pool.query(`
-    CREATE UNIQUE INDEX IF NOT EXISTS
-    orders_smm_idempotency_unique
-    ON orders(smm_idempotency_key)
-    WHERE smm_idempotency_key IS NOT NULL
-  `);
-
-  await pool.query(`
-    CREATE UNIQUE INDEX IF NOT EXISTS
-    orders_smm_order_unique
-    ON orders(smm_order_id)
-    WHERE smm_order_id IS NOT NULL
-  `);
-  
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS customer_users (
-      id SERIAL PRIMARY KEY,
-      phone TEXT UNIQUE NOT NULL,
-      password_hash TEXT NOT NULL,
-      password_salt TEXT NOT NULL,
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-    )
-  `);
-
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS customer_sessions (
-      id SERIAL PRIMARY KEY,
-      token_hash TEXT UNIQUE NOT NULL,
-      user_id INTEGER NOT NULL
-        REFERENCES customer_users(id) ON DELETE CASCADE,
-      expires_at TIMESTAMPTZ NOT NULL,
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-    )
-  `);
-
-  await pool.query(`
-    ALTER TABLE orders
-    ADD COLUMN IF NOT EXISTS user_id INTEGER
-    REFERENCES customer_users(id) ON DELETE SET NULL
-  `);
-
-  await pool.query(`
-    CREATE UNIQUE INDEX IF NOT EXISTS
-    orders_payment_reference_unique
-    ON orders(payment_reference)
-    WHERE payment_reference IS NOT NULL
-  `);
-
-  await pool.query(`
-    CREATE INDEX IF NOT EXISTS orders_user_id_idx
-    ON orders(user_id)
-  `);
-
-  await pool.query(`
-    DELETE FROM customer_sessions
-    WHERE expires_at < NOW()
-  `);
-
-  console.log("TIKGROW database ready.");
-}
-
-// CUSTOMER REGISTRATION
-app.post("/api/auth/register", async (req, res) => {
-  try {
-    const phone = normalizePhone(req.body.phone);
-    const password = String(req.body.password || "");
-
-    if (
-      password.length < 8 ||
-      password.length > 128
-    ) {
-      return res.status(400).json({
-        error: "Password must be at least 8 characters."
-      });
-    }
-
-    const existing = await pool.query(
-      "SELECT id FROM customer_users WHERE phone = $1",
-      [phone]
-    );
-
-    if (existing.rows.length) {
-      return res.status(409).json({
-        error: "An account already exists. Please log in."
-      });
-    }
-
-    const salt = crypto.randomBytes(16).toString("hex");
-
-    const hash = await scrypt(password, salt, 64);
-
-    const saved = await pool.query(
-      `INSERT INTO customer_users
-       (phone, password_hash, password_salt)
-       VALUES ($1, $2, $3)
-       RETURNING id, phone`,
-      [phone, hash.toString("hex"), salt]
-    );
-
-    const user = saved.rows[0];
-
-    await createCustomerSession(user.id, res);
-
-    res.status(201).json({
-      success: true,
-      message: "Your TIKGROW account has been created.",
-      user
-    });
-
-  } catch (error) {
-    console.error("Registration error:", error.message);
-
-    res.status(400).json({
-      error: error.message || "Registration failed."
-    });
-  }
 });
 
-// CUSTOMER LOGIN
-app.post("/api/auth/login", async (req, res) => {
-  try {
-    const phone = normalizePhone(req.body.phone);
-    const password = String(req.body.password || "");
+// VERIFY PAYMENT WITH PAYSTACK
 
-    if (!password || password.length > 128) {
-      return res.status(401).json({
-        error: "Invalid phone number or password."
-      });
-    }
-
-    const result = await pool.query(
-      `SELECT id, phone, password_hash, password_salt
-       FROM customer_users
-       WHERE phone = $1`,
-      [phone]
-    );
-
-    if (!result.rows.length) {
-      return res.status(401).json({
-        error: "Invalid phone number or password."
-      });
-    }
-
-    const user = result.rows[0];
-
-    const hash = await scrypt(
-      password,
-      user.password_salt,
-      64
-    );
-
-    const expected = Buffer.from(
-      user.password_hash,
-      "hex"
-    );
-
-    if (
-      hash.length !== expected.length ||
-      !crypto.timingSafeEqual(hash, expected)
-    ) {
-      return res.status(401).json({
-        error: "Invalid phone number or password."
-      });
-    }
-
-    await createCustomerSession(user.id, res);
-
-    res.json({
-      success: true,
-      message: "Login successful.",
-      user: {
-        id: user.id,
-        phone: user.phone
-      }
-    });
-
-  } catch (error) {
-    console.error("Login error:", error.message);
-
-    res.status(400).json({
-      error: error.message || "Login failed."
-    });
-  }
-});
-
-// CURRENT CUSTOMER
-app.get("/api/auth/me", async (req, res) => {
-  try {
-    const user = await getCustomer(req);
-
-    if (!user) {
-      return res.json({
-        authenticated: false
-      });
-    }
-
-    res.json({
-      authenticated: true,
-      user
-    });
-
-  } catch (error) {
-    res.status(500).json({
-      error: "Could not check account."
-    });
-  }
-});
-
-// CUSTOMER LOGOUT
-app.post("/api/auth/logout", async (req, res) => {
-  try {
-    const token = getCookie(req, "tg_session");
-
-    if (token) {
-      const tokenHash = crypto
-        .createHash("sha256")
-        .update(token)
-        .digest("hex");
-
-      await pool.query(
-        "DELETE FROM customer_sessions WHERE token_hash = $1",
-        [tokenHash]
-      );
-    }
-
-    clearSessionCookie(res);
-
-    res.json({
-      success: true,
-      message: "You have logged out."
-    });
-
-  } catch (error) {
-    res.status(500).json({
-      error: "Could not log out."
-    });
-  }
-});
-
-// CUSTOMER ORDER HISTORY
-app.get("/api/customer/orders", async (req, res) => {
-  try {
-    const user = await getCustomer(req);
-
-    if (!user) {
-      return res.status(401).json({
-        error: "Please log in first."
-      });
-    }
-
-    const result = await pool.query(
-      `SELECT order_code, service, quantity, price_ghs,
-              status, paid_at, created_at
-       FROM orders
-       WHERE user_id = $1
-       ORDER BY created_at DESC
-       LIMIT 100`,
-      [user.id]
-    );
-
-    res.json(result.rows.map(order => ({
-      ...order,
-      payment_status: order.paid_at
-        ? "Paid"
-        : "Not paid"
-    })));
-
-  } catch (error) {
-    console.error("History error:", error.message);
-
-    res.status(500).json({
-      error: "Could not load order history."
-    });
-  }
-});
-
-// PAYSTACK VERIFICATION
 async function verifyPaystack(reference) {
   const response = await fetch(
     "https://api.paystack.co/transaction/verify/" +
-    encodeURIComponent(reference),
+      encodeURIComponent(reference),
     {
       headers: {
-        Authorization:
-          "Bearer " + process.env.PAYSTACK_SECRET_KEY
+        Authorization: "Bearer " + process.env.PAYSTACK_SECRET_KEY
       }
     }
   );
 
   const data = await response.json();
 
-  if (
-    !response.ok ||
-    !data.status ||
-    !data.data
-  ) {
-    throw new Error(
-      "Could not verify Paystack transaction."
-    );
+  if (!response.ok || !data.status) {
+    throw new Error(data.message || "Payment verification failed.");
+  }
+
+  if (data.data.status !== "success" ||
+      data.data.currency !== "GHS") {
+    throw new Error("Payment has not been confirmed.");
   }
 
   return data.data;
 }
 
-// CONFIRM CUSTOMER PAYMENT
-async function confirmPayment(reference) {
-  const payment = await verifyPaystack(reference);
+async function markOrderPaid(reference) {
+  const client = await pool.connect();
 
-  if (
-    payment.status !== "success" ||
-    payment.currency !== "GHS"
-  ) {
-    throw new Error(
-      "Payment has not been confirmed."
+  try {
+    await client.query("BEGIN");
+
+    const result = await client.query(
+      `SELECT * FROM store_orders
+       WHERE payment_reference=$1 FOR UPDATE`,
+      [reference]
     );
-  }
 
-  const result = await pool.query(
-    `SELECT * FROM orders
-     WHERE payment_reference = $1`,
-    [reference]
-  );
+    const order = result.rows[0];
 
-  if (!result.rows.length) {
-    throw new Error(
-      "Payment order was not found."
+    if (!order) throw new Error("Order not found.");
+
+    if (order.payment_status === "Paid") {
+      await client.query("COMMIT");
+      return order;
+    }
+
+    const payment = await verifyPaystack(reference);
+
+    if (Number(payment.amount) !== Math.round(Number(order.amount_ghs) * 100)) {
+      throw new Error("Payment amount does not match order.");
+    }
+
+    const items = await client.query(
+      "SELECT * FROM store_order_items WHERE order_id=$1",
+      [order.id]
     );
-  }
 
-  const order = result.rows[0];
+    for (const item of items.rows) {
+      const stockUpdate = await client.query(
+        `UPDATE store_products SET stock=stock-$1
+         WHERE id=$2 AND stock >= $1 RETURNING id`,
+        [item.quantity, item.product_id]
+      );
 
-  const expectedAmount = Math.round(
-    Number(order.price_ghs) * 100
-  );
+      if (!stockUpdate.rows.length) {
+        throw new Error("Insufficient stock while confirming payment.");
+      }
+    }
 
-  if (
-    Number(payment.amount) !== expectedAmount
-  ) {
-    throw new Error(
-      "Payment amount does not match the order."
+    await client.query(
+      `UPDATE store_orders
+       SET payment_status='Paid',order_status='Processing'
+       WHERE id=$1`,
+      [order.id]
     );
+
+    await client.query("COMMIT");
+    return order;
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
   }
-
-  await pool.query(
-    `UPDATE orders
-     SET status = 'Paid',
-         paid_at = COALESCE(paid_at, NOW())
-     WHERE payment_reference = $1`,
-    [reference]
-  );
-
-  return order.order_code;
 }
 
-// PAYSTACK WEBHOOK
-app.post("/api/paystack/webhook", async (req, res) => {
+app.get("/api/payment/verify/:reference", customerAuth, async (req, res) => {
   try {
-    const signature =
-      req.headers["x-paystack-signature"];
-
-    const rawBody = req.rawBody;
-
-    if (
-      !signature ||
-      !rawBody ||
-      !/^[0-9a-f]{128}$/i.test(signature)
-    ) {
-      return res.sendStatus(401);
-    }
-
-    const expected = crypto
-      .createHmac(
-        "sha512",
-        process.env.PAYSTACK_SECRET_KEY
-      )
-      .update(rawBody)
-      .digest();
-
-    const received = Buffer.from(
-      signature,
-      "hex"
+    const result = await pool.query(
+      `SELECT id FROM store_orders
+       WHERE payment_reference=$1 AND user_id=$2`,
+      [req.params.reference, req.user.userId]
     );
 
-    if (
-      received.length !== expected.length ||
-      !crypto.timingSafeEqual(expected, received)
-    ) {
-      return res.sendStatus(401);
+    if (!result.rows.length) {
+      return res.status(404).json({ error: "Order not found." });
     }
 
-    const event = req.body;
+    await markOrderPaid(req.params.reference);
 
-    if (
-      event.event === "charge.success" &&
-      event.data?.reference
-    ) {
-      await confirmPayment(
-        event.data.reference
-      );
-    }
-
-    return res.sendStatus(200);
-
+    res.json({ success: true, payment_status: "Paid" });
   } catch (error) {
-    console.error(
-      "Paystack webhook error:",
-      error.message
-    );
-
-    return res.sendStatus(400);
-  }
-});
-
-// CREATE CUSTOMER ORDER
-app.post("/api/orders", async (req, res) => {
-  try {
-    const contact = String(
-      req.body.contact || ""
-    ).trim();
-
-    const link = String(
-      req.body.link || ""
-    ).trim();
-
-    const service = String(
-      req.body.service || ""
-    );
-
-    const quantity = Number(
-      req.body.quantity
-    );
-
-    if (
-      !contact ||
-      contact.length < 7 ||
-      contact.length > 20
-    ) {
-      return res.status(400).json({
-        error: "Enter a valid phone number."
-      });
-    }
-
-    if (!validTikTokLink(link)) {
-      return res.status(400).json({
-        error: "Enter a valid TikTok link."
-      });
-    }
-
-    if (!SERVICES.includes(service)) {
-      return res.status(400).json({
-        error: "Select a valid campaign service."
-      });
-    }
-
-    const price = calculatePrice(
-      service,
-      quantity
-    );
-
-    const orderCode = makeOrderCode();
-
-    const user = await getCustomer(req);
-
-    const saved = await pool.query(
-      `INSERT INTO orders
-       (order_code, customer_name, contact, service,
-        tiktok_link, details, quantity, price_ghs, user_id)
-       VALUES ($1, 'Customer', $2, $3, $4, $5, $6, $7, $8)
-       RETURNING order_code, service, quantity,
-                 price_ghs, status, created_at`,
-      [
-        orderCode,
-        contact,
-        service,
-        link,
-        "Campaign request",
-        quantity,
-        price,
-        user?.id || null
-      ]
-    );
-
-    res.status(201).json(saved.rows[0]);
-
-  } catch (error) {
-    console.error("Order error:", error.message);
-
     res.status(400).json({
-      error: error.message || "Could not save order."
+      success: false,
+      error: error.message
     });
   }
 });
 
-// CUSTOMER ORDER TRACKING
-app.get("/api/orders/:code", async (req, res) => {
+// CUSTOMER ORDER HISTORY
+
+app.get("/api/my-orders", customerAuth, async (req, res) => {
   try {
+    const orders = await pool.query(
+      `SELECT * FROM store_orders
+       WHERE user_id=$1 ORDER BY created_at DESC`,
+      [req.user.userId]
+    );
+
+    for (const order of orders.rows) {
+      const items = await pool.query(
+        `SELECT product_name,quantity,unit_price
+         FROM store_order_items WHERE order_id=$1`,
+        [order.id]
+      );
+
+      order.items = items.rows;
+    }
+
+    res.json({ orders: orders.rows });
+  } catch (error) {
+    res.status(500).json({ error: "Could not load order history." });
+  }
+});
+
+// ADMIN: VIEW ALL ORDERS
+
+app.get("/api/admin/orders", adminAuth, async (req, res) => {
+  try {
+    const orders = await pool.query(
+      `SELECT * FROM store_orders ORDER BY created_at DESC`
+    );
+
+    for (const order of orders.rows) {
+      const items = await pool.query(
+        `SELECT product_name,quantity,unit_price
+         FROM store_order_items WHERE order_id=$1`,
+        [order.id]
+      );
+
+      order.items = items.rows;
+    }
+
+    res.json({ orders: orders.rows });
+  } catch (error) {
+    res.status(500).json({ error: "Could not load orders." });
+  }
+});
+
+// ADMIN: UPDATE ORDER STATUS
+
+app.patch("/api/admin/orders/:id", adminAuth, async (req, res) => {
+  try {
+    const allowed = [
+      "Processing",
+      "Ready for Delivery",
+      "Shipped",
+      "Completed",
+      "Cancelled"
+    ];
+
+    const status = req.body.order_status;
+
+    if (!allowed.includes(status)) {
+      return res.status(400).json({ error: "Invalid order status." });
+    }
+
     const result = await pool.query(
-      `SELECT order_code, service, quantity, price_ghs,
-              status, paid_at, created_at
-       FROM orders
-       WHERE order_code = $1`,
-      [req.params.code]
+      `UPDATE store_orders SET order_status=$1
+       WHERE id=$2 AND payment_status='Paid'
+       RETURNING *`,
+      [status, req.params.id]
     );
 
     if (!result.rows.length) {
       return res.status(404).json({
-        error: "Order not found."
+        error: "Paid order not found."
       });
     }
 
-    const order = result.rows[0];
-
-    res.json({
-      ...order,
-      payment_status: order.paid_at
-        ? "Paid"
-        : "Not paid"
-    });
-
+    res.json({ order: result.rows[0] });
   } catch (error) {
-    console.error("Tracking error:", error.message);
-
-    res.status(500).json({
-      error: "Could not check order."
-    });
+    res.status(500).json({ error: "Could not update order." });
   }
 });
-
-// INITIALIZE PAYSTACK CHECKOUT
-app.post("/api/orders/:code/pay", async (req, res) => {
-  try {
-    const result = await pool.query(
-      `SELECT * FROM orders
-       WHERE order_code = $1`,
-      [req.params.code]
-    );
-
-    if (!result.rows.length) {
-      return res.status(404).json({
-        error: "Order not found."
-      });
-    }
-
-    const order = result.rows[0];
-
-    if (order.paid_at) {
-      return res.status(400).json({
-        error: "This order has already been paid."
-      });
-    }
-
-    if (Number(order.price_ghs) < 1) {
-      return res.status(400).json({
-        error: "The minimum online payment is GH₵1."
-      });
-    }
-
-    const reference =
-      "TIKGROW-" +
-      crypto.randomBytes(12).toString("hex");
-
-    await pool.query(
-      `UPDATE orders
-       SET payment_reference = $1
-       WHERE id = $2`,
-      [reference, order.id]
-    );
-
-    const digits = order.contact.replace(
-      /\D/g,
-      ""
-    );
-
-    const email =
-      digits +
-      "@tikgrow-platform1.onrender.com";
-
-    const response = await fetch(
-      "https://api.paystack.co/transaction/initialize",
-      {
-        method: "POST",
-        headers: {
-          Authorization:
-            "Bearer " + process.env.PAYSTACK_SECRET_KEY,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          email,
-          amount: String(
-            Math.round(
-              Number(order.price_ghs) * 100
-            )
-          ),
-          currency: "GHS",
-          reference,
-          channels: ["card", "mobile_money"],
-          callback_url:
-            "https://tikgrow-platform1.onrender.com/payment-callback"
-        })
-      }
-    );
-
-    const data = await response.json();
-
-    if (
-      !response.ok ||
-      !data.status ||
-      !data.data?.authorization_url
-    ) {
-      console.error("Paystack response:", data);
-
-      return res.status(502).json({
-        error:
-          data.message ||
-          "Could not start payment."
-      });
-    }
-
-    res.json({
-      authorization_url:
-        data.data.authorization_url,
-      reference
-    });
-
-  } catch (error) {
-    console.error(
-      "Payment setup error:",
-      error.message
-    );
-
-    res.status(500).json({
-      error: "Could not initialize payment."
-    });
-  }
-});
-
-// CUSTOMER RETURNS FROM PAYSTACK
-app.get("/payment-callback", async (req, res) => {
-  try {
-    const reference = String(
-      req.query.reference ||
-      req.query.trxref ||
-      ""
-    );
-
-    if (!reference) {
-      return res.redirect(
-        "/?payment=missing"
-      );
-    }
-
-    const orderCode = await confirmPayment(
-      reference
-    );
-
-    return res.redirect(
-      "/payment-success.html?order=" +
-      encodeURIComponent(orderCode)
-    );
-
-  } catch (error) {
-    console.error(
-      "Payment callback error:",
-      error.message
-    );
-
-    return res.redirect(
-      "/?payment=verify-failed"
-    );
-  }
-});
-
-// ADMIN: VIEW ORDERS
-app.get("/api/admin/orders", adminOnly, async (req, res) => {
-  try {
-    const result = await pool.query(
-      `SELECT * FROM orders
-       ORDER BY created_at DESC
-       LIMIT 500`
-    );
-
-    res.json(result.rows);
-
-  } catch (error) {
-    console.error(
-      "Admin orders error:",
-      error.message
-    );
-
-    res.status(500).json({
-      error: "Could not load orders."
-    });
-  }
-});
-
-// ADMIN: CHECK SMM AFRICA CONNECTION
-app.post(
-  "/api/admin/provider/check",
-  adminOnly,
-  async (req, res) => {
-    try {
-      const [balance, services] =
-        await Promise.all([
-          smmRequest("balance"),
-          smmRequest("services")
-        ]);
-
-      if (!Array.isArray(services)) {
-        throw new Error(
-          "Provider returned an unexpected service list."
-        );
-      }
-
-      const tiktokServices = services
-        .filter(item =>
-          /tiktok/i.test(
-            String(item.name || "") +
-            " " +
-            String(item.category || "")
-          )
-        )
-        .map(item => ({
-          service: item.service,
-          name: item.name,
-          rate: item.rate,
-          min: item.min,
-          max: item.max,
-          type: item.type
-        }));
-
-      res.json({
-        success: true,
-        message:
-          "SMM Africa connection successful.",
-        balance: balance.balance,
-        currency: balance.currency,
-        total_services: services.length,
-        tiktok_services: tiktokServices
-      });
-
-    } catch (error) {
-      console.error(
-        "Provider check error:",
-        error.message
-      );
-
-      res.status(502).json({
-        success: false,
-        error: error.message
-      });
-    }
-  }
-);
-
-// ADMIN: UPDATE PROMOTION STATUS
-app.patch(
-  "/api/admin/orders/:id",
-  adminOnly,
-  async (req, res) => {
-    try {
-      const allowedStatuses = [
-        "New",
-        "Awaiting Payment",
-        "In Progress",
-        "Completed",
-        "Cancelled"
-      ];
-
-      const status = req.body.status;
-
-      if (!allowedStatuses.includes(status)) {
-        return res.status(400).json({
-          error: "Invalid order status."
-        });
-      }
-
-      const result = await pool.query(
-        `UPDATE orders
-         SET status = $1
-         WHERE id = $2
-           AND paid_at IS NOT NULL
-         RETURNING id, order_code, status`,
-        [status, req.params.id]
-      );
-
-      if (!result.rows.length) {
-        return res.status(400).json({
-          error:
-            "Only paid orders can be updated for promotion."
-        });
-      }
-
-      res.json(result.rows[0]);
-
-    } catch (error) {
-      console.error(
-        "Admin update error:",
-        error.message
-      );
-
-      res.status(500).json({
-        error: "Could not update order."
-      });
-    }
-  }
-);
 
 // HEALTH CHECK
+
 app.get("/api/health", (req, res) => {
-  res.json({
-    status: "ok",
-    message: "TIKGROW is online"
-  });
-});
-
-// HOMEPAGE
-app.get("/", (req, res) => {
-  res.sendFile(
-    path.join(__dirname, "index.html")
-  );
-});
-
-// OTHER STATIC PAGES
-app.get(/.*/, (req, res, next) => {
-  const requestedFile = path.join(
-    __dirname,
-    req.path
-  );
-
-  if (
-    !requestedFile.startsWith(
-      __dirname + path.sep
-    ) ||
-    req.path.startsWith("/api/")
-  ) {
-    return next();
-  }
-
-  res.sendFile(
-    requestedFile,
-    error => {
-      if (error && !res.headersSent) {
-        res.status(404).send("Page not found");
-      }
-    }
-  );
+  res.json({ status: "ok", app: "TIKGROW Online Store" });
 });
 
 // START SERVER
-initializeDatabase()
-  .then(() => {
-    app.listen(PORT, () => {
-      console.log(
-        "TIKGROW running on port " + PORT
-      );
-    });
-  })
-  .catch(error => {
-    console.error(
-      "Database initialization failed:",
-      error
-    );
 
-    process.exit(1);
+async function start() {
+  requiredEnvironment();
+  await initializeDatabase();
+
+  app.listen(PORT, "0.0.0.0", () => {
+    console.log("TIKGROW Online Store running on port " + PORT);
   });
+}
+
+app.use((error, req, res, next) => {
+  console.error(error.message);
+
+  if (error instanceof multer.MulterError) {
+    return res.status(400).json({ error: "Image is too large or invalid." });
+  }
+
+  res.status(500).json({ error: error.message || "Server error." });
+});
+
+start().catch(error => {
+  console.error("SERVER STARTUP FAILED:", error);
+  process.exit(1);
+});
 
