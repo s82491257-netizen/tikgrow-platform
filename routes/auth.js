@@ -1,48 +1,152 @@
 
 const express = require("express");
-const bcrypt = require("bcryptjs");
-const rateLimit = require("express-rate-limit");
+const crypto = require("crypto");
+const { promisify } = require("util");
 const { pool } = require("../db");
 
 const router = express.Router();
+const scrypt = promisify(crypto.scrypt);
 
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  limit: 10,
-  standardHeaders: "draft-7",
-  legacyHeaders: false,
-  message: {
-    success: false,
-    message: "Too many attempts. Please try again later."
+const COOKIE_NAME = "savcel_session";
+const SESSION_DAYS = 7;
+
+function getAuthSecret() {
+  if (!process.env.AUTH_SECRET || process.env.AUTH_SECRET.length < 32) {
+    throw new Error("AUTH_SECRET must contain at least 32 characters.");
   }
-});
 
-function requireFields(body, fields) {
-  return fields.every(field =>
-    typeof body[field] === "string" &&
-    body[field].trim().length > 0
+  return process.env.AUTH_SECRET;
+}
+
+async function hashPassword(password) {
+  const salt = crypto.randomBytes(16).toString("hex");
+  const key = await scrypt(password, salt, 64);
+
+  return salt + ":" + key.toString("hex");
+}
+
+async function verifyPassword(password, storedHash) {
+  const parts = storedHash.split(":");
+
+  if (parts.length !== 2) return false;
+
+  const salt = parts[0];
+  const originalKey = Buffer.from(parts[1], "hex");
+  const newKey = await scrypt(password, salt, 64);
+
+  return originalKey.length === newKey.length &&
+    crypto.timingSafeEqual(originalKey, newKey);
+}
+
+function createSession(userId) {
+  const expires = Math.floor(Date.now() / 1000) +
+    SESSION_DAYS * 24 * 60 * 60;
+
+  const payload = Buffer.from(JSON.stringify({
+    id: userId,
+    exp: expires
+  })).toString("base64url");
+
+  const signature = crypto
+    .createHmac("sha256", getAuthSecret())
+    .update(payload)
+    .digest("base64url");
+
+  return payload + "." + signature;
+}
+
+function readSession(req) {
+  const cookieHeader = req.headers.cookie || "";
+  const cookies = cookieHeader.split(";");
+
+  const sessionCookie = cookies.find((cookie) =>
+    cookie.trim().startsWith(COOKIE_NAME + "=")
   );
+
+  if (!sessionCookie) return null;
+
+  const token = sessionCookie.trim().slice(COOKIE_NAME.length + 1);
+  const parts = token.split(".");
+
+  if (parts.length !== 2) return null;
+
+  const [payload, signature] = parts;
+
+  const expected = crypto
+    .createHmac("sha256", getAuthSecret())
+    .update(payload)
+    .digest("base64url");
+
+  const suppliedBuffer = Buffer.from(signature);
+  const expectedBuffer = Buffer.from(expected);
+
+  if (
+    suppliedBuffer.length !== expectedBuffer.length ||
+    !crypto.timingSafeEqual(suppliedBuffer, expectedBuffer)
+  ) {
+    return null;
+  }
+
+  try {
+    const data = JSON.parse(
+      Buffer.from(payload, "base64url").toString()
+    );
+
+    if (!Number.isInteger(data.id) || data.exp < Date.now() / 1000) {
+      return null;
+    }
+
+    return data;
+  } catch {
+    return null;
+  }
+}
+
+function setSessionCookie(res, token) {
+  res.cookie(COOKIE_NAME, token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+    path: "/",
+    maxAge: SESSION_DAYS * 24 * 60 * 60 * 1000
+  });
+}
+
+function clearSessionCookie(res) {
+  res.clearCookie(COOKIE_NAME, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+    path: "/"
+  });
 }
 
 // CUSTOMER REGISTRATION
-router.post("/register", authLimiter, async (req, res) => {
+router.post("/register", async (req, res) => {
   try {
-    const { name, email, password } = req.body || {};
+    const { full_name, email, phone, password } = req.body;
 
-    if (!requireFields(req.body || {}, ["name", "email", "password"])) {
+    if (
+      typeof full_name !== "string" ||
+      typeof email !== "string" ||
+      typeof password !== "string"
+    ) {
       return res.status(400).json({
         success: false,
-        message: "Name, email and password are required."
+        message: "Please provide your name, email and password."
       });
     }
 
-    const cleanName = name.trim();
+    const name = full_name.trim();
     const cleanEmail = email.trim().toLowerCase();
+    const cleanPhone = typeof phone === "string"
+      ? phone.trim()
+      : null;
 
-    if (cleanName.length > 80) {
+    if (name.length < 2 || name.length > 150) {
       return res.status(400).json({
         success: false,
-        message: "Name is too long."
+        message: "Enter a valid full name."
       });
     }
 
@@ -53,45 +157,45 @@ router.post("/register", authLimiter, async (req, res) => {
       });
     }
 
-    if (password.length < 10 || password.length > 128) {
+    if (password.length < 8 || password.length > 128) {
       return res.status(400).json({
         success: false,
-        message: "Password must be 10–128 characters."
+        message: "Password must be 8 to 128 characters."
       });
     }
 
-    const existing = await pool.query(
-      "SELECT id FROM users WHERE email = $1 LIMIT 1",
-      [cleanEmail]
-    );
-
-    if (existing.rows.length > 0) {
-      return res.status(409).json({
+    if (cleanPhone && cleanPhone.length > 30) {
+      return res.status(400).json({
         success: false,
-        message: "An account with this email already exists."
+        message: "Enter a valid phone number."
       });
     }
 
-    const passwordHash = await bcrypt.hash(password, 12);
+    const passwordHash = await hashPassword(password);
 
     const result = await pool.query(
-      `INSERT INTO users (name, email, password_hash, role)
-       VALUES ($1, $2, $3, 'customer')
-       RETURNING id, name, email, role, created_at`,
-      [cleanName, cleanEmail, passwordHash]
+      `INSERT INTO users
+       (full_name, email, phone, password_hash, role)
+       VALUES ($1, $2, $3, $4, 'customer')
+       RETURNING id, full_name, email, phone, role`,
+      [name, cleanEmail, cleanPhone || null, passwordHash]
     );
+
+    const user = result.rows[0];
+
+    setSessionCookie(res, createSession(user.id));
 
     return res.status(201).json({
       success: true,
-      message: "Account created successfully.",
-      user: result.rows[0]
+      message: "Your SavCel Hub account has been created.",
+      user
     });
 
   } catch (error) {
     if (error.code === "23505") {
       return res.status(409).json({
         success: false,
-        message: "An account with this email already exists."
+        message: "This email or phone number is already registered."
       });
     }
 
@@ -99,34 +203,35 @@ router.post("/register", authLimiter, async (req, res) => {
 
     return res.status(500).json({
       success: false,
-      message: "Registration failed."
+      message: "Registration failed. Please try again."
     });
   }
 });
 
 // CUSTOMER LOGIN
-router.post("/login", authLimiter, async (req, res) => {
+router.post("/login", async (req, res) => {
   try {
-    const { email, password } = req.body || {};
+    const { email, password } = req.body;
 
-    if (!requireFields(req.body || {}, ["email", "password"])) {
+    if (
+      typeof email !== "string" ||
+      typeof password !== "string" ||
+      password.length > 128
+    ) {
       return res.status(400).json({
         success: false,
-        message: "Email and password are required."
+        message: "Enter your email and password."
       });
     }
 
-    const cleanEmail = email.trim().toLowerCase();
-
     const result = await pool.query(
-      `SELECT id, name, email, password_hash, role
+      `SELECT id, full_name, email, phone, password_hash, role
        FROM users
-       WHERE email = $1
-       LIMIT 1`,
-      [cleanEmail]
+       WHERE email = $1 AND is_active = TRUE`,
+      [email.trim().toLowerCase()]
     );
 
-    if (result.rows.length === 0) {
+    if (!result.rows.length) {
       return res.status(401).json({
         success: false,
         message: "Invalid email or password."
@@ -134,28 +239,23 @@ router.post("/login", authLimiter, async (req, res) => {
     }
 
     const user = result.rows[0];
+    const valid = await verifyPassword(password, user.password_hash);
 
-    const validPassword = await bcrypt.compare(
-      password,
-      user.password_hash
-    );
-
-    if (!validPassword) {
+    if (!valid) {
       return res.status(401).json({
         success: false,
         message: "Invalid email or password."
       });
     }
 
+    setSessionCookie(res, createSession(user.id));
+
+    delete user.password_hash;
+
     return res.json({
       success: true,
       message: "Login successful.",
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role
-      }
+      user
     });
 
   } catch (error) {
@@ -163,43 +263,62 @@ router.post("/login", authLimiter, async (req, res) => {
 
     return res.status(500).json({
       success: false,
-      message: "Login failed."
+      message: "Login failed. Please try again."
     });
   }
 });
 
-// CHECK EMAIL ACCOUNT
-router.post("/check-email", async (req, res) => {
+// CURRENT CUSTOMER
+router.get("/me", async (req, res) => {
   try {
-    const email = String(req.body?.email || "")
-      .trim()
-      .toLowerCase();
+    const session = readSession(req);
 
-    if (!email) {
-      return res.status(400).json({
+    if (!session) {
+      return res.status(401).json({
         success: false,
-        message: "Email is required."
+        message: "Please log in."
       });
     }
 
     const result = await pool.query(
-      "SELECT id FROM users WHERE email = $1 LIMIT 1",
-      [email]
+      `SELECT id, full_name, email, phone, role
+       FROM users
+       WHERE id = $1 AND is_active = TRUE`,
+      [session.id]
     );
+
+    if (!result.rows.length) {
+      clearSessionCookie(res);
+
+      return res.status(401).json({
+        success: false,
+        message: "Account not found."
+      });
+    }
 
     return res.json({
       success: true,
-      exists: result.rows.length > 0
+      user: result.rows[0]
     });
 
   } catch (error) {
-    console.error("Email check error:", error.message);
+    console.error("Account lookup error:", error.message);
 
     return res.status(500).json({
       success: false,
-      message: "Unable to check email."
+      message: "Could not load your account."
     });
   }
+});
+
+// LOGOUT
+router.post("/logout", (req, res) => {
+  clearSessionCookie(res);
+
+  res.json({
+    success: true,
+    message: "You have logged out."
+  });
 });
 
 module.exports = router;
