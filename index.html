@@ -236,56 +236,89 @@ be confirmed before payment.
 </footer>
 
 <script>
-const service=document.getElementById('service');
+const service = document.getElementById("service");
 
-function choose(name){
-service.value=name;
-document.getElementById('order').scrollIntoView({behavior:'smooth'});
+function choose(name) {
+  service.value = name;
+  document.getElementById("order").scrollIntoView({ behavior: "smooth" });
 }
 
-let orderText='';
+let orderText = "";
 
-document.getElementById('orderForm').addEventListener('submit',function(e){
-e.preventDefault();
+document.getElementById("orderForm").addEventListener("submit", async function(e) {
+  e.preventDefault();
 
-const data={
-service:service.value,
-link:document.getElementById('link').value.trim(),
-quantity:document.getElementById('quantity').value,
-name:document.getElementById('name').value.trim(),
-contact:document.getElementById('contact').value.trim(),
-notes:document.getElementById('notes').value.trim()
-};
+  const data = {
+    service: service.value,
+    link: document.getElementById("link").value.trim(),
+    quantity: document.getElementById("quantity").value,
+    name: document.getElementById("name").value.trim(),
+    contact: document.getElementById("contact").value.trim(),
+    notes: document.getElementById("notes").value.trim()
+  };
 
-if(!data.service||!data.link||!data.quantity||!data.name||!data.contact){
-alert('Please complete all required fields.');
-return;
-}
+  if (!data.service || !data.link || !data.quantity || !data.name || !data.contact) {
+    alert("Please complete all required fields.");
+    return;
+  }
 
-orderText=
-'TIKGROW ORDER REQUEST\n\n'+
-'Name: '+data.name+'\n'+
-'Service: '+data.service+'\n'+
-'TikTok URL: '+data.link+'\n'+
-'Campaign: '+data.quantity+'\n'+
-'Contact: '+data.contact+'\n'+
-'Instructions: '+(data.notes||'None')+
-'\n\nPrice: Awaiting quotation.';
+  const submitButton = this.querySelector('button[type="submit"]');
+  if (submitButton) {
+    submitButton.disabled = true;
+    submitButton.textContent = "Submitting...";
+  }
 
-document.getElementById('summary').textContent=orderText;
-document.getElementById('result').style.display='block';
-document.getElementById('result').scrollIntoView({behavior:'smooth'});
+  try {
+    const response = await fetch("/api/orders", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: data.name,
+        contact: data.contact,
+        service: data.service,
+        link: data.link,
+        details: "Quantity: " + data.quantity + "\nInstructions: " + (data.notes || "None")
+      })
+    });
+
+    const result = await response.json();
+
+    if (!response.ok || !result.success) {
+      throw new Error(result.message || "Order could not be saved.");
+    }
+
+    orderText =
+      "TIKGROW ORDER CONFIRMED\n\n" +
+      "Order ID: " + result.order.order_code + "\n" +
+      "Name: " + data.name + "\n" +
+      "Service: " + data.service + "\n" +
+      "TikTok URL: " + data.link + "\n" +
+      "Quantity: " + data.quantity + "\n" +
+      "Contact: " + data.contact + "\n" +
+      "Instructions: " + (data.notes || "None");
+
+    document.getElementById("summary").textContent = orderText;
+    document.getElementById("result").style.display = "block";
+    document.getElementById("result").scrollIntoView({ behavior: "smooth" });
+
+    alert("Your order has been saved! Order ID: " + result.order.order_code);
+  } catch (error) {
+    alert(error.message);
+  } finally {
+    if (submitButton) {
+      submitButton.disabled = false;
+      submitButton.textContent = "Submit Order";
+    }
+  }
 });
 
-function copyOrder(){
-if(navigator.clipboard && window.isSecureContext){
-navigator.clipboard.writeText(orderText)
-.then(()=>alert('Order details copied!'))
-.catch(()=>alert('Please select and copy your order details.'));
-}else{
-alert('Your order details are ready. Please copy them from the order summary.');
-}
+function copyOrder() {
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(orderText)
+      .then(() => alert("Order details copied!"))
+      .catch(() => alert("Please copy your order summary manually."));
+  } else {
+    alert("Please copy your order summary manually.");
+  }
 }
 </script>
-</body>
-</html>
