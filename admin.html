@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,45 +6,92 @@
 <title>TIKGROW Admin Dashboard</title>
 <style>
 *{box-sizing:border-box}
-body{margin:0;background:#070b13;color:#fff;font-family:Arial,sans-serif}
-header{background:#101827;border-bottom:1px solid #26364b;padding:20px}
+:root{
+ --blue:#168bfa;--dark:#10243e;--light:#eaf5ff;
+ --muted:#718198;--border:#e2edf7;--white:#fff;
+}
+body{margin:0;background:#f5faff;color:var(--dark);font-family:Arial,sans-serif}
+header{
+ background:#fff;border-bottom:1px solid var(--border);
+ position:sticky;top:0;z-index:10;padding:17px 20px;
+}
 .top{max-width:1200px;margin:auto;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
-.logo{font-size:27px;font-weight:900;letter-spacing:2px}
-.logo span{color:#25f4ee}
-.container{max-width:1200px;margin:25px auto;padding:0 15px}
-.card{background:#111a29;border:1px solid #26364b;border-radius:15px;padding:20px;margin-bottom:18px}
-h2{margin-top:0}
-.muted{color:#9aaac0;font-size:13px}
-input,select{width:100%;padding:13px;border:1px solid #35465f;background:#080f1c;color:white;border-radius:9px;font-size:15px}
-button{padding:12px 16px;border:0;border-radius:9px;background:#25f4ee;color:#061016;font-weight:bold;cursor:pointer}
-button.secondary{background:#25344b;color:white}
-button.danger{background:#fe2c55;color:white}
-button:disabled{opacity:.5}
-.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
-.stat{background:#0a1220;border:1px solid #26364b;border-radius:12px;padding:17px}
-.stat small{color:#9aabc0}
-.stat strong{display:block;font-size:25px;margin-top:9px;color:#25f4ee;overflow-wrap:anywhere}
+.logo{font-size:26px;font-weight:900;color:var(--blue);letter-spacing:-1px}
+.logo span{color:var(--dark)}
+.container{max-width:1200px;margin:25px auto;padding:0 16px}
+.card{
+ background:#fff;border:1px solid var(--border);
+ border-radius:17px;padding:22px;margin-bottom:18px;
+ box-shadow:0 5px 20px rgba(20,91,160,.045);
+}
+h2{margin-top:0;font-size:21px}
+.muted{color:var(--muted);font-size:13px;line-height:1.5}
+input,select{
+ width:100%;padding:13px;border:1px solid #dce8f4;
+ background:#fbfdff;color:var(--dark);border-radius:10px;font-size:14px;
+ outline:none;
+}
+input:focus,select:focus{border-color:var(--blue)}
+button{
+ padding:12px 16px;border:0;border-radius:10px;
+ background:var(--blue);color:white;font-weight:bold;cursor:pointer;
+}
+button:hover{background:#0875e8}
+button.secondary{background:#edf6ff;color:#0875e8}
+button.danger{background:#fff0f1;color:#d52d43}
+button:disabled{opacity:.5;cursor:wait}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:13px}
+.stat{
+ background:linear-gradient(145deg,#fff,#f0f8ff);
+ border:1px solid var(--border);border-radius:14px;padding:18px;
+}
+.stat small{color:var(--muted);font-weight:600}
+.stat strong{display:block;font-size:26px;margin-top:10px;color:var(--blue);overflow-wrap:anywhere}
 .controls{display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:10px;align-items:end}
-.order{background:#0a1220;border:1px solid #26364b;border-radius:13px;padding:17px;margin-top:13px}
+.order{
+ background:#fff;border:1px solid var(--border);
+ border-radius:14px;padding:18px;margin-top:13px;
+}
 .orderhead{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
-.orderid{font-weight:900;color:#25f4ee}
+.orderid{font-weight:900;color:var(--blue);font-size:16px}
 .details{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:15px 0}
-.detail{background:#111a29;padding:11px;border-radius:8px;overflow-wrap:anywhere}
-.detail small{display:block;color:#9aabc0;margin-bottom:5px}
+.detail{
+ background:#f3f8fe;padding:12px;border-radius:9px;
+ overflow-wrap:anywhere;font-size:14px;
+}
+.detail small{display:block;color:var(--muted);margin-bottom:6px;font-size:11px}
+.paid{color:#13834b;font-weight:bold}
+.unpaid{color:#d43c50;font-weight:bold}
+.tag{font-size:11px;padding:7px 10px;border-radius:20px;background:#e9f8ef;color:#13834b;font-weight:bold}
+.tag.red{background:#fff0f1;color:#d43c50}
 .statusrow{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
 .statusrow select{max-width:220px}
-.paid{color:#25f4ee;font-weight:bold}
-.unpaid{color:#ff8498;font-weight:bold}
-.tag{font-size:11px;padding:6px 9px;border-radius:20px;background:#183b40;color:#25f4ee}
-.tag.red{background:#411b29;color:#ff9bad}
-a{color:#25f4ee;overflow-wrap:anywhere}
+a{color:var(--blue);overflow-wrap:anywhere;font-weight:600}
 .hidden{display:none}
-#message{padding:12px;margin-top:12px;border-radius:8px;background:#183b40;color:#25f4ee;display:none}
-@media(max-width:700px){
+#message{
+ padding:12px;margin-top:12px;border-radius:9px;
+ background:#eaf5ff;color:#0875e8;display:none;font-size:13px;
+}
+.login-box{max-width:450px;margin:55px auto}
+.login-logo{text-align:center;font-size:30px;font-weight:900;color:var(--blue);margin-bottom:22px}
+.login-box button{width:100%;margin-top:12px}
+#loginMessage{margin-top:12px;color:#d43c50}
+@media(max-width:800px){
  .stats{grid-template-columns:repeat(2,1fr)}
  .controls{grid-template-columns:1fr 1fr}
  .controls input{grid-column:1/-1}
+}
+@media(max-width:500px){
+ .container{padding:0 11px}
+ .card{padding:16px}
+ .stats{gap:9px}
+ .stat{padding:13px}
+ .stat strong{font-size:21px}
  .details{grid-template-columns:1fr}
+ .controls{grid-template-columns:1fr}
+ .controls input{grid-column:auto}
+ .statusrow select{max-width:none;width:100%}
+ .statusrow button{flex:1}
 }
 </style>
 </head>
@@ -53,7 +99,7 @@ a{color:#25f4ee;overflow-wrap:anywhere}
 
 <header>
  <div class="top">
-  <div class="logo">TIK<span>GROW</span> <small style="font-size:12px;color:#a8b5c8">ADMIN</small></div>
+  <div class="logo">TIK<span>GROW</span> <small style="font-size:12px;color:#718198">ADMIN</small></div>
   <div>
    <button class="secondary" id="refreshBtn" onclick="loadOrders()">↻ Refresh</button>
    <button class="danger" onclick="logout()">Logout</button>
@@ -63,19 +109,21 @@ a{color:#25f4ee;overflow-wrap:anywhere}
 
 <main class="container">
 
-<section class="card" id="loginCard">
- <h2>Admin Login</h2>
- <p class="muted">Enter your private admin token to manage TIKGROW orders.</p>
- <input id="tokenInput" type="password" placeholder="Admin token">
- <button style="width:100%;margin-top:12px" onclick="login()">LOGIN TO DASHBOARD</button>
- <div id="loginMessage" class="muted"></div>
+<section class="card login-box" id="loginCard">
+ <div class="login-logo">TIKGROW</div>
+ <h2 style="text-align:center">Admin Login</h2>
+ <p class="muted" style="text-align:center">Secure access to your administration dashboard.</p>
+ <input id="tokenInput" type="password" placeholder="Enter private admin token">
+ <button onclick="login()">LOGIN TO DASHBOARD</button>
+ <div id="loginMessage"></div>
 </section>
 
 <section id="dashboard" class="hidden">
 
  <div class="card">
-  <h2>Dashboard Overview</h2>
-  <p class="muted">Monitor your orders, payments and campaign activity.</p>
+  <h2>Welcome to TIKGROW Admin 👋</h2>
+  <p class="muted">Manage your orders, payments and promotion activities.</p>
+
   <div class="stats">
    <div class="stat"><small>Total Orders</small><strong id="totalOrders">0</strong></div>
    <div class="stat"><small>Paid Orders</small><strong id="paidOrders">0</strong></div>
@@ -86,8 +134,11 @@ a{color:#25f4ee;overflow-wrap:anywhere}
 
  <div class="card">
   <h2>Order Management</h2>
+  <p class="muted">Search, filter and manage customer orders.</p>
+
   <div class="controls">
-   <input id="search" placeholder="Search Order ID, phone or TikTok link" oninput="renderOrders()">
+   <input id="search" placeholder="Search order ID, phone or TikTok link" oninput="renderOrders()">
+
    <select id="serviceFilter" onchange="renderOrders()">
     <option value="">All Services</option>
     <option>TikTok Likes</option>
@@ -97,17 +148,19 @@ a{color:#25f4ee;overflow-wrap:anywhere}
     <option>Shares</option>
     <option>LIVE Promotion</option>
    </select>
+
    <select id="statusFilter" onchange="renderOrders()">
     <option value="">All Statuses</option>
     <option>New</option>
     <option>Awaiting Payment</option>
-    <option>Paid</option>
     <option>In Progress</option>
     <option>Completed</option>
     <option>Cancelled</option>
    </select>
+
    <button class="secondary" onclick="exportCSV()">Export CSV</button>
   </div>
+
   <div id="message"></div>
   <div id="ordersList"></div>
  </div>
@@ -149,6 +202,7 @@ function logout() {
  adminToken = "";
  orders = [];
  clearInterval(refreshTimer);
+ refreshTimer = null;
  document.getElementById("dashboard").classList.add("hidden");
  document.getElementById("loginCard").classList.remove("hidden");
  document.getElementById("tokenInput").value = "";
@@ -164,6 +218,7 @@ async function api(url, options={}) {
   }
  });
  const data = await response.json().catch(() => ({}));
+
  if (!response.ok) {
   if (response.status === 401 || response.status === 403) {
    throw new Error("Admin token rejected. Please log in again.");
@@ -194,7 +249,7 @@ async function loadOrders(fromLogin=false) {
   document.getElementById("message").style.display = "none";
 
   if (!refreshTimer) {
-   refreshTimer = setInterval(() => loadOrders(), 30000);
+   refreshTimer = setInterval(() => loadOrders(),30000);
   }
  } catch(error) {
   if (fromLogin || error.message.includes("token")) {
@@ -214,10 +269,15 @@ async function loadOrders(fromLogin=false) {
  }
 }
 
+function isPaid(o) {
+ return Boolean(o.paid_at) ||
+  String(o.payment_status || "").toLowerCase() === "paid";
+}
+
 function updateStats() {
- const paid = orders.filter(o => o.paid_at || String(o.payment_status || "").toLowerCase() === "paid");
+ const paid = orders.filter(isPaid);
  const unpaid = orders.length - paid.length;
- const sales = paid.reduce((sum,o) => sum + Number(o.price_ghs || 0), 0);
+ const sales = paid.reduce((sum,o) => sum + Number(o.price_ghs || 0),0);
 
  document.getElementById("totalOrders").textContent = orders.length;
  document.getElementById("paidOrders").textContent = paid.length;
@@ -237,7 +297,7 @@ function renderOrders() {
 
   return searchable.includes(search) &&
    (!service || o.service === service) &&
-   (!status || o.status === status);
+   (!status || (status === "Paid" ? isPaid(o) : o.status === status));
  });
 
  const list = document.getElementById("ordersList");
@@ -247,13 +307,16 @@ function renderOrders() {
   return;
  }
 
+ const allowedStatuses = [
+  "New","Awaiting Payment","In Progress","Completed","Cancelled"
+ ];
+
  list.innerHTML = filtered.map(o => {
   const id = Number(o.id);
-  const paid = Boolean(o.paid_at) || String(o.payment_status || "").toLowerCase() === "paid";
+  const paid = isPaid(o);
   const payment = paid ? "Paid" : "Unpaid";
   const price = Number(o.price_ghs || 0);
-  const options = ["New","Awaiting Payment","Paid","In Progress","Completed","Cancelled"];
-  const current = options.includes(o.status) ? o.status : "New";
+  const current = allowedStatuses.includes(o.status) ? o.status : "New";
 
   return `
    <article class="order">
@@ -279,7 +342,7 @@ function renderOrders() {
 
     <div class="statusrow">
      <select id="status-${id}">
-      ${options.map(s => `<option value="${s}" ${s === current ? "selected" : ""}>${s}</option>`).join("")}
+      ${allowedStatuses.map(s => `<option value="${s}" ${s === current ? "selected" : ""}>${s}</option>`).join("")}
      </select>
      <button onclick="updateStatus(${id})">Update Status</button>
      <button class="secondary" onclick="copyOrder('${escapeHTML(o.order_code || "")}')">Copy Order ID</button>
@@ -291,7 +354,8 @@ function renderOrders() {
 function safeURL(value) {
  try {
   const url = new URL(value);
-  if (url.protocol === "https:" && url.hostname === "www.tiktok.com" || url.protocol === "https:" && url.hostname === "tiktok.com") {
+  if (url.protocol === "https:" &&
+      (url.hostname === "www.tiktok.com" || url.hostname === "tiktok.com")) {
    return escapeHTML(url.href);
   }
  } catch(e) {}
@@ -303,7 +367,7 @@ async function updateStatus(id) {
  const newStatus = select.value;
 
  try {
-  await api("/api/admin/orders/" + id, {
+  await api("/api/admin/orders/" + id,{
    method:"PATCH",
    body:JSON.stringify({status:newStatus})
   });
@@ -329,19 +393,24 @@ function exportCSV() {
   return;
  }
 
- const columns = ["order_code","contact","service","quantity","price_ghs","payment_status","status","tiktok_link","created_at"];
+ const columns = [
+  "order_code","contact","service","quantity",
+  "price_ghs","payment_status","status","tiktok_link","created_at"
+ ];
  const rows = [columns.join(",")];
 
  orders.forEach(o => {
   rows.push(columns.map(key => {
    let value = key === "payment_status"
-    ? (o.paid_at ? "Paid" : (o.payment_status || "Unpaid"))
+    ? (isPaid(o) ? "Paid" : (o.payment_status || "Unpaid"))
     : (o[key] ?? "");
    return '"' + String(value).replace(/"/g,'""') + '"';
   }).join(","));
  });
 
- const blob = new Blob([rows.join("\n")], {type:"text/csv;charset=utf-8"});
+ const blob = new Blob([rows.join("\n")],{
+  type:"text/csv;charset=utf-8"
+ });
  const url = URL.createObjectURL(blob);
  const a = document.createElement("a");
  a.href = url;
@@ -357,4 +426,3 @@ if (adminToken) {
 </script>
 </body>
 </html>
-
