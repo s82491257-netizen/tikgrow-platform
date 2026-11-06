@@ -1,90 +1,158 @@
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>SavCel Hub | Admin Activation</title>
-<style>
-*{box-sizing:border-box}
-body{margin:0;min-height:100vh;display:grid;place-items:center;padding:20px;background:#eef7ff;font-family:Arial,sans-serif;color:#172b4d}
-.card{width:100%;max-width:420px;background:white;padding:30px;border-radius:20px;box-shadow:0 12px 40px #183b6018}
-h2{margin-top:0;color:#1476d4}
-p{color:#61758b;line-height:1.6}
-input{width:100%;padding:15px;margin:12px 0;border:1px solid #cbdced;border-radius:10px;font-size:16px}
-button{width:100%;padding:15px;border:0;border-radius:10px;background:#1476d4;color:white;font-size:16px;font-weight:bold}
-button:disabled{opacity:.6}
-#message{margin-top:16px;line-height:1.5;overflow-wrap:anywhere}
-</style>
-</head>
-<body>
-<div class="card">
-<h2>Activate Administrator</h2>
-<p>Enter the ADMIN_SETUP_TOKEN currently saved in your Render environment.</p>
+const express = require("express");
+const crypto = require("crypto");
+const { pool } = require("../db");
+const requireAuth = require("../middleware/auth");
 
-<form id="setupForm">
-<input
-id="token"
-type="password"
-placeholder="Enter admin setup token"
-autocomplete="off"
-required
->
-<button id="submitButton" type="submit">Activate Admin</button>
-</form>
+const router = express.Router();
 
-<div id="message" role="status"></div>
-</div>
+router.use(requireAuth);
 
-<script>
-const form = document.getElementById("setupForm");
-const tokenInput = document.getElementById("token");
-const message = document.getElementById("message");
-const button = document.getElementById("submitButton");
+function checkAdminToken(req) {
+  const saved = String(
+    process.env.ADMIN_SETUP_TOKEN || ""
+  ).trim();
 
-form.addEventListener("submit", async function(event) {
-  event.preventDefault();
+  const supplied = String(
+    req.headers["x-admin-setup-token"] || ""
+  ).trim();
 
-  const token = tokenInput.value.trim();
-
-  if (!token) {
-    message.textContent = "Please enter your setup token.";
-    return;
+  if (!saved || !supplied || saved.length < 40) {
+    return false;
   }
 
-  button.disabled = true;
-  message.textContent = "Checking authorization...";
+  const a = Buffer.from(saved, "utf8");
+  const b = Buffer.from(supplied, "utf8");
+
+  if (a.length !== b.length) return false;
+
+  return crypto.timingSafeEqual(a, b);
+}
+
+// FIRST ADMIN ACTIVATION
+router.post("/setup", async (req, res) => {
+  if (!checkAdminToken(req)) {
+    return res.status(403).json({
+      success: false,
+      message: "Invalid admin setup authorization."
+    });
+  }
+
+  let client;
 
   try {
-    const response = await fetch("/api/admin/setup", {
-      method: "POST",
-      credentials: "same-origin",
-      headers: {
-        "Content-Type": "application/json",
-        "x-admin-setup-token": token
-      },
-      body: JSON.stringify({})
-    });
+    client = await pool.connect();
 
-    const data = await response.json();
+    await client.query("BEGIN");
 
-    if (!response.ok || !data.success) {
-      message.textContent = data.message || "Admin activation failed.";
-      button.disabled = false;
-      return;
+    await client.query(
+      "SELECT pg_advisory_xact_lock(99112233)"
+    );
+
+    const user = await client.query(
+      `SELECT id, role, is_active
+       FROM users
+       WHERE id = $1
+       FOR UPDATE`,
+      [req.user.id]
+    );
+
+    if (!user.rows.length || !user.rows[0].is_active) {
+      await client.query("ROLLBACK");
+
+      return res.status(403).json({
+        success: false,
+        message: "Your account is not active."
+      });
     }
 
-    message.textContent = "Admin activated successfully. Opening dashboard...";
+    if (user.rows[0].role === "admin") {
+      await client.query("COMMIT");
 
-    setTimeout(function() {
-      window.location.href = "/admin";
-    }, 1200);
+      return res.json({
+        success: true,
+        message: "You are already an administrator."
+      });
+    }
+
+    const admins = await client.query(
+      `SELECT id FROM users
+       WHERE role = 'admin'
+       LIMIT 1`
+    );
+
+    if (admins.rows.length) {
+      await client.query("ROLLBACK");
+
+      return res.status(409).json({
+        success: false,
+        message: "An administrator already exists."
+      });
+    }
+
+    await client.query(
+      `UPDATE users
+       SET role = 'admin'
+       WHERE id = $1`,
+      [req.user.id]
+    );
+
+    await client.query("COMMIT");
+
+    return res.json({
+      success: true,
+      message: "Administrator activated successfully."
+    });
 
   } catch (error) {
-    message.textContent = "Connection error. Please try again.";
-    button.disabled = false;
+    if (client) {
+      await client.query("ROLLBACK").catch(() => {});
+    }
+
+    console.error("Admin setup error:", error.message);
+
+    return res.status(500).json({
+      success: false,
+      message: "Unable to activate administrator."
+    });
+
+  } finally {
+    if (client) client.release();
   }
 });
-</script>
-</body>
-</html>
+
+// ADMIN DASHBOARD INFORMATION
+router.get("/dashboard", async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT id, full_name, email, role
+       FROM users
+       WHERE id = $1
+       AND role = 'admin'
+       AND is_active = TRUE`,
+      [req.user.id]
+    );
+
+    if (!result.rows.length) {
+      return res.status(403).json({
+        success: false,
+        message: "Administrator access required."
+      });
+    }
+
+    return res.json({
+      success: true,
+      admin: result.rows[0]
+    });
+
+  } catch (error) {
+    console.error("Dashboard error:", error.message);
+
+    return res.status(500).json({
+      success: false,
+      message: "Unable to load dashboard."
+    });
+  }
+});
+
+module.exports = router;
