@@ -487,8 +487,7 @@ async function submitSmmOrder(orderCode) {
     throw error;
   }
 }
-
-    
+   
 // DATABASE SETUP
 async function initializeDatabase() {
   await pool.query(`
