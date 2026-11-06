@@ -1,1 +1,213 @@
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#ffffff">
+<title>Payment Confirmation | SavCel Hub</title>
+
+<style>
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: Arial, sans-serif;
+  background: linear-gradient(135deg, #f4fbff, #e5f4ff);
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  color: #16324f;
+}
+
+.card {
+  width: 100%;
+  max-width: 460px;
+  background: white;
+  border-radius: 22px;
+  padding: 35px 25px;
+  text-align: center;
+  box-shadow: 0 15px 50px rgba(40,120,180,.12);
+}
+
+.logo {
+  font-size: 25px;
+  font-weight: 900;
+  color: #168ee8;
+  margin-bottom: 28px;
+}
+
+.symbol {
+  width: 75px;
+  height: 75px;
+  margin: 0 auto 20px;
+  border-radius: 50%;
+  background: #eaf6ff;
+  color: #168ee8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 36px;
+  font-weight: bold;
+}
+
+h1 {
+  font-size: 25px;
+  margin-bottom: 12px;
+}
+
+p {
+  color: #718096;
+  line-height: 1.6;
+  font-size: 14px;
+}
+
+.reference {
+  background: #f4faff;
+  padding: 14px;
+  border-radius: 12px;
+  margin: 22px 0;
+  overflow-wrap: anywhere;
+  font-size: 13px;
+}
+
+button {
+  width: 100%;
+  padding: 15px;
+  border: none;
+  border-radius: 12px;
+  background: #168ee8;
+  color: white;
+  font-size: 15px;
+  font-weight: bold;
+  cursor: pointer;
+  margin-top: 12px;
+}
+
+button:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}
+
+.hidden {
+  display: none;
+}
+
+.error {
+  color: #d33;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="card">
+
+  <div class="logo">SavCel Hub</div>
+
+  <div class="symbol" id="symbol">...</div>
+
+  <h1 id="heading">Verifying your payment</h1>
+
+  <p id="message">
+    Please wait while we securely confirm your transaction with Paystack.
+  </p>
+
+  <div class="reference">
+    <strong>Payment reference</strong>
+    <p id="reference">Checking...</p>
+  </div>
+
+  <button id="homeButton" class="hidden"
+    onclick="window.location.href='/'">
+    Return to Home
+  </button>
+
+  <button id="retryButton" class="hidden"
+    onclick="verifyPayment()">
+    Check Payment Again
+  </button>
+
+</div>
+
+<script>
+const reference = new URLSearchParams(
+  window.location.search
+).get("reference");
+
+const heading = document.getElementById("heading");
+const message = document.getElementById("message");
+const symbol = document.getElementById("symbol");
+const referenceBox = document.getElementById("reference");
+const homeButton = document.getElementById("homeButton");
+const retryButton = document.getElementById("retryButton");
+
+referenceBox.textContent = reference || "Not available";
+
+async function verifyPayment() {
+  if (!reference) {
+    showError("Payment reference is missing.");
+    return;
+  }
+
+  heading.textContent = "Verifying your payment";
+  message.textContent =
+    "Contacting Paystack to confirm your transaction.";
+
+  symbol.textContent = "...";
+  homeButton.classList.add("hidden");
+  retryButton.classList.add("hidden");
+
+  try {
+    const response = await fetch(
+      "/api/checkout/verify?reference=" +
+      encodeURIComponent(reference),
+      {
+        method: "GET",
+        credentials: "same-origin"
+      }
+    );
+
+    const result = await response.json();
+
+    if (response.ok && result.success) {
+      symbol.textContent = "✓";
+      heading.textContent = "Payment Confirmed!";
+      message.textContent =
+        "Your payment has been verified successfully. Your order number is " +
+        result.order_number + ".";
+
+      homeButton.classList.remove("hidden");
+    } else {
+      showError(
+        result.message ||
+        "We could not confirm your payment yet."
+      );
+    }
+
+  } catch (error) {
+    showError(
+      "Unable to reach the verification service. Please try again."
+    );
+  }
+}
+
+function showError(text) {
+  symbol.textContent = "!";
+  heading.textContent = "Payment Not Confirmed";
+  message.textContent = text;
+  message.classList.add("error");
+  retryButton.classList.remove("hidden");
+}
+
+verifyPayment();
+</script>
+
+</body>
+</html>
