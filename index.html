@@ -1,324 +1,164 @@
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#090910">
-<title>TIKGROW - TikTok Boosting Marketplace</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TIKGROW | TikTok Promotion</title>
 <style>
-:root{
---bg:#090910;--panel:#151520;--pink:#fe2c55;
---blue:#25f4ee;--muted:#a6a6b5;--white:#fff;
-}
-*{box-sizing:border-box;margin:0;padding:0}
-body{background:var(--bg);color:white;font-family:Arial,sans-serif}
-header{height:72px;padding:0 6%;display:flex;align-items:center;
-justify-content:space-between;border-bottom:1px solid #272735;
-position:sticky;top:0;background:#090910f5;z-index:10}
-.logo{font-size:26px;font-weight:900;color:var(--blue)}
-.logo span{color:var(--pink)}
-nav{display:flex;gap:22px}
-nav a{color:white;text-decoration:none;font-size:14px}
-a{cursor:pointer}
-.hero{text-align:center;padding:75px 20px 65px;
-background:radial-gradient(ellipse at top,#24203d,#090910 70%)}
-.tag{color:var(--blue);font-size:12px;letter-spacing:3px}
-.hero h1{font-size:clamp(38px,7vw,65px);margin:22px 0}
-.hero h1 span{color:var(--pink)}
-.hero p{color:var(--muted);max-width:600px;margin:auto;line-height:1.7}
-.btn{border:0;border-radius:9px;padding:14px 22px;
-background:var(--pink);color:white;font-weight:bold;
-cursor:pointer;text-decoration:none;display:inline-block}
-.btn.blue{background:var(--blue);color:#08080d}
-.hero .btn{margin:25px 5px 0}
-section{padding:55px 6%}
-.heading{text-align:center;font-size:30px;margin-bottom:12px}
-.heading span{color:var(--blue)}
-.sub{text-align:center;color:var(--muted);margin-bottom:30px}
-.services{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
-.service{background:var(--panel);border:1px solid #292939;
-border-radius:14px;padding:24px;transition:.2s}
-.service:hover{border-color:var(--blue);transform:translateY(-3px)}
-.service .emoji{font-size:34px}
-.service h3{margin:15px 0 9px}
-.service p{color:var(--muted);font-size:14px;line-height:1.6}
-.price{color:var(--blue);font-size:14px;margin:15px 0}
-.service button{width:100%}
-.order-wrap{max-width:700px;margin:auto;background:var(--panel);
-border:1px solid #303041;border-radius:16px;padding:25px}
-label{display:block;margin:17px 0 8px;font-size:14px;font-weight:bold}
-input,select,textarea{width:100%;padding:14px;
-background:#090910;color:white;border:1px solid #383849;
-border-radius:8px;font-size:15px;outline:none}
-input:focus,select:focus,textarea:focus{border-color:var(--blue)}
-textarea{resize:vertical;min-height:95px}
-.order-wrap .btn{width:100%;margin-top:20px}
-.notice{font-size:12px;color:var(--muted);line-height:1.6;margin-top:14px}
-.result{display:none;margin-top:20px;padding:18px;
-background:#0b2527;border:1px solid var(--blue);border-radius:10px}
-.result p{line-height:1.7;color:#d6ffff}
-.result button{margin-top:12px}
-.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:15px}
-.step{background:var(--panel);padding:22px;border-radius:12px}
-.step strong{font-size:25px;color:var(--pink)}
-.step h3{margin:12px 0}
-.step p{font-size:14px;color:var(--muted);line-height:1.6}
-footer{text-align:center;padding:30px;border-top:1px solid #292939;color:var(--muted)}
-@media(max-width:700px){
-.services{grid-template-columns:repeat(2,1fr)}
-.steps{grid-template-columns:1fr}
-header{padding:0 4%}
-nav{gap:12px}
-nav a{font-size:12px}
-}
-@media(max-width:420px){
-.services{grid-template-columns:1fr}
-.logo{font-size:22px}
-}
+*{box-sizing:border-box}
+body{margin:0;background:#08090d;color:white;font-family:Arial,sans-serif}
+header{padding:22px 18px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #242631}
+.logo{font-size:27px;font-weight:900;letter-spacing:1px}
+.logo span{color:#25f4ee}
+.tag{color:#aaa;font-size:12px}
+.hero{text-align:center;padding:48px 20px 30px;background:radial-gradient(ellipse at top,#123c48 0%,#08090d 70%)}
+.hero h1{font-size:38px;margin:8px 0}
+.hero h1 span{color:#25f4ee}
+.hero p{color:#b8bbc7;line-height:1.6}
+.pill{display:inline-block;padding:8px 14px;border:1px solid #25f4ee;border-radius:30px;color:#25f4ee;font-size:12px}
+.container{max-width:650px;margin:auto;padding:20px}
+h2{font-size:22px}
+.services{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.service{background:#151720;border:1px solid #303341;border-radius:15px;padding:18px 12px;text-align:center}
+.service strong{display:block;margin:9px 0}
+.service small{color:#a8abba}
+form,.panel{background:#151720;border:1px solid #303341;border-radius:18px;padding:20px;margin-top:22px}
+label{display:block;margin:15px 0 7px;color:#d5d7df;font-size:13px}
+input,select,textarea{width:100%;padding:14px;border-radius:10px;border:1px solid #3b3e4b;background:#090b11;color:white;font-size:15px}
+button{width:100%;padding:16px;border:0;border-radius:11px;background:linear-gradient(90deg,#25f4ee,#168cba);color:#061014;font-size:16px;font-weight:900;margin-top:20px}
+button:disabled{opacity:.5}
+.note{font-size:12px;color:#a7aaba;line-height:1.6}
+.status{margin-top:15px;padding:12px;border-radius:10px;background:#202633;line-height:1.5;overflow-wrap:anywhere}
+a{color:#25f4ee}
+footer{text-align:center;padding:30px;color:#858999;font-size:12px}
 </style>
 </head>
 <body>
-
 <header>
-<div class="logo">TIK<span>GROW</span></div>
-<nav>
-<a href="#services">Services</a>
-<a href="#order">Order</a>
-<a href="#how">How it works</a>
-</nav>
+ <div class="logo">TIK<span>GROW</span></div>
+ <div class="tag">PROMOTION MARKETPLACE</div>
 </header>
 
-<div class="hero">
-<div class="tag">YOUR SOCIAL GROWTH MARKETPLACE</div>
-<h1>BOOST YOUR <span>TIKTOK</span><br>GROW YOUR BRAND.</h1>
-<p>Discover TikTok promotion services, reach new audiences
-and grow your creator presence with TIKGROW.</p>
-<a href="#services" class="btn">Explore Services</a>
-<a href="#order" class="btn blue">Place an Order</a>
-</div>
-
-<section id="services">
-<h2 class="heading">Our <span>Boosting Services</span></h2>
-<p class="sub">Choose the promotion service you need.</p>
-
-<div class="services">
-<div class="service">
-<div class="emoji">❤️</div>
-<h3>TikTok Likes</h3>
-<p>Promote your videos to genuine audiences and encourage real engagement.</p>
-<div class="price">Custom campaign quote</div>
-<button class="btn" onclick="choose('TikTok Likes')">Select Service</button>
-</div>
-
-<div class="service">
-<div class="emoji">▶️</div>
-<h3>Video Views</h3>
-<p>Promote your videos to reach more potential viewers.</p>
-<div class="price">Custom campaign quote</div>
-<button class="btn" onclick="choose('Video Views')">Select Service</button>
-</div>
-
-<div class="service">
-<div class="emoji">👥</div>
-<h3>Followers</h3>
-<p>Build awareness and attract people genuinely interested in your content.</p>
-<div class="price">Custom campaign quote</div>
-<button class="btn" onclick="choose('Followers')">Select Service</button>
-</div>
-
-<div class="service">
-<div class="emoji">🔴</div>
-<h3>Live Promotion</h3>
-<p>Promote your upcoming TikTok LIVE sessions to potential viewers.</p>
-<div class="price">Custom campaign quote</div>
-<button class="btn" onclick="choose('Live Promotion')">Select Service</button>
-</div>
-
-<div class="service">
-<div class="emoji">🔗</div>
-<h3>Shares</h3>
-<p>Increase content exposure through legitimate sharing campaigns.</p>
-<div class="price">Custom campaign quote</div>
-<button class="btn" onclick="choose('Shares')">Select Service</button>
-</div>
-
-<div class="service">
-<div class="emoji">💬</div>
-<h3>Comments</h3>
-<p>Encourage authentic conversations and relevant audience responses.</p>
-<div class="price">Custom campaign quote</div>
-<button class="btn" onclick="choose('Comments')">Select Service</button>
-</div>
-</div>
+<section class="hero">
+ <div class="pill">GROW YOUR TIKTOK PRESENCE</div>
+ <h1>Make Your Content<br><span>Get Noticed.</span></h1>
+ <p>Choose a promotion service and submit your TikTok campaign request.</p>
 </section>
 
-<section id="order">
-<h2 class="heading">Place Your <span>Order</span></h2>
-<p class="sub">Tell us what you want to promote.</p>
+<main class="container">
+ <h2>Our Services</h2>
+ <div class="services">
+  <div class="service">❤️<strong>TikTok Likes</strong><small>Likes campaign requests</small></div>
+  <div class="service">▶️<strong>Video Views</strong><small>Video visibility campaigns</small></div>
+  <div class="service">👥<strong>Followers</strong><small>Audience growth campaigns</small></div>
+  <div class="service">🔴<strong>LIVE Promotion</strong><small>Promote your live session</small></div>
+  <div class="service">↗️<strong>Shares</strong><small>Share campaign requests</small></div>
+  <div class="service">💬<strong>Comments</strong><small>Comment campaign requests</small></div>
+ </div>
 
-<div class="order-wrap">
-<form id="orderForm">
-<label for="service">Choose a service</label>
-<select id="service" required>
-<option value="">Select service</option>
-<option>TikTok Likes</option>
-<option>Video Views</option>
-<option>Followers</option>
-<option>Live Promotion</option>
-<option>Shares</option>
-<option>Comments</option>
-</select>
+ <form id="orderForm">
+  <h2>Start Your Campaign</h2>
+  <label>Phone Number</label>
+  <input name="contact" type="tel" placeholder="0240000000" required>
+  <label>TikTok Video or Profile Link</label>
+  <input name="link" type="url" placeholder="https://www.tiktok.com/@username" required>
+  <label>Select Service</label>
+  <select name="service" required>
+   <option value="">Choose a service</option>
+   <option>TikTok Likes</option>
+   <option>Video Views</option>
+   <option>Followers</option>
+   <option>LIVE Promotion</option>
+   <option>Shares</option>
+   <option>Comments</option>
+  </select>
+  <label>Quantity / Campaign Package</label>
+  <input name="quantity" placeholder="e.g. 1000 or Premium campaign" required>
+  <label>Instructions (optional)</label>
+  <textarea name="notes" rows="3" placeholder="Additional campaign details"></textarea>
+  <button id="submitBtn" type="submit">SUBMIT ORDER</button>
+  <p class="note">No TikTok password is required. Never share your TikTok password with anyone.</p>
+  <div id="result" class="status" hidden></div>
+ </form>
 
-<label for="link">TikTok profile or video URL</label>
-<input id="link" type="url" placeholder="https://www.tiktok.com/@username" required>
+ <section class="panel">
+  <h2>Track Your Order</h2>
+  <p class="note">Already placed an order? Enter your order ID to check its status and payment details.</p>
+  <input id="trackCode" placeholder="Example: TG-XXXXXXXXXX">
+  <button type="button" onclick="trackOrder()">TRACK ORDER</button>
+  <div id="trackingResult" class="status" hidden></div>
+ </section>
+</main>
 
-<label for="quantity">Campaign size / target</label>
-<select id="quantity" required>
-<option value="">Choose a target</option>
-<option>Starter campaign</option>
-<option>Standard campaign</option>
-<option>Premium campaign</option>
-<option>Custom campaign</option>
-</select>
-
-<label for="name">Your name</label>
-<input id="name" placeholder="Enter your name" required>
-
-<label for="contact">Email or WhatsApp contact</label>
-<input id="contact" placeholder="Enter your contact details" required>
-
-<label for="notes">Additional instructions</label>
-<textarea id="notes" placeholder="Tell us more about your campaign (optional)"></textarea>
-
-<button class="btn" type="submit">Create Order Request →</button>
-<p class="notice">
-This creates an order inquiry only. It does not charge you or
-automatically deliver engagement. A campaign and its price must
-be confirmed before payment.
-</p>
-</form>
-
-<div class="result" id="result">
-<h3>Order Request Prepared ✓</h3>
-<p id="summary"></p>
-<button class="btn blue" onclick="copyOrder()">Copy Order Details</button>
-</div>
-</div>
-</section>
-
-<section id="how">
-<h2 class="heading">How It <span>Works</span></h2>
-<p class="sub">Simple steps to start your promotion.</p>
-<div class="steps">
-<div class="step">
-<strong>01</strong>
-<h3>Choose a service</h3>
-<p>Select the TikTok promotion service you want.</p>
-</div>
-<div class="step">
-<strong>02</strong>
-<h3>Submit your request</h3>
-<p>Enter your TikTok link and contact information.</p>
-</div>
-<div class="step">
-<strong>03</strong>
-<h3>Confirm your campaign</h3>
-<p>Receive a quotation and approve the campaign before payment.</p>
-</div>
-</div>
-</section>
-
-<footer>
-<div class="logo">TIK<span>GROW</span></div>
-<p style="margin-top:12px">TikTok Growth & Promotion Marketplace</p>
-<p style="margin-top:12px">© 2026 TIKGROW. All rights reserved.</p>
-</footer>
+<footer>© 2026 TIKGROW · Independent promotion marketplace · Not affiliated with TikTok.</footer>
 
 <script>
-const service = document.getElementById("service");
+const form=document.getElementById("orderForm");
+const result=document.getElementById("result");
+const submitBtn=document.getElementById("submitBtn");
 
-function choose(name) {
-  service.value = name;
-  document.getElementById("order").scrollIntoView({ behavior: "smooth" });
-}
-
-let orderText = "";
-
-document.getElementById("orderForm").addEventListener("submit", async function(e) {
-  e.preventDefault();
-
-  const data = {
-    service: service.value,
-    link: document.getElementById("link").value.trim(),
-    quantity: document.getElementById("quantity").value,
-    name: document.getElementById("name").value.trim(),
-    contact: document.getElementById("contact").value.trim(),
-    notes: document.getElementById("notes").value.trim()
-  };
-
-  if (!data.service || !data.link || !data.quantity || !data.name || !data.contact) {
-    alert("Please complete all required fields.");
-    return;
-  }
-
-  const submitButton = this.querySelector('button[type="submit"]');
-  if (submitButton) {
-    submitButton.disabled = true;
-    submitButton.textContent = "Submitting...";
-  }
-
-  try {
-    const response = await fetch("/api/orders", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name: data.name,
-        contact: data.contact,
-        service: data.service,
-        link: data.link,
-        details: "Quantity: " + data.quantity + "\nInstructions: " + (data.notes || "None")
-      })
-    });
-
-    const result = await response.json();
-
-    if (!response.ok || !result.success) {
-      throw new Error(result.message || "Order could not be saved.");
-    }
-
-    orderText =
-      "TIKGROW ORDER CONFIRMED\n\n" +
-      "Order ID: " + result.order.order_code + "\n" +
-      "Name: " + data.name + "\n" +
-      "Service: " + data.service + "\n" +
-      "TikTok URL: " + data.link + "\n" +
-      "Quantity: " + data.quantity + "\n" +
-      "Contact: " + data.contact + "\n" +
-      "Instructions: " + (data.notes || "None");
-
-    document.getElementById("summary").textContent = orderText;
-    document.getElementById("result").style.display = "block";
-    document.getElementById("result").scrollIntoView({ behavior: "smooth" });
-
-    alert("Your order has been saved! Order ID: " + result.order.order_code);
-  } catch (error) {
-    alert(error.message);
-  } finally {
-    if (submitButton) {
-      submitButton.disabled = false;
-      submitButton.textContent = "Submit Order";
-    }
-  }
+form.addEventListener("submit",async function(e){
+ e.preventDefault();
+ submitBtn.disabled=true;
+ submitBtn.textContent="SUBMITTING...";
+ result.hidden=false;
+ result.textContent="Saving your order...";
+ const data=new FormData(form);
+ try{
+  const response=await fetch("/api/orders",{
+   method:"POST",
+   headers:{"Content-Type":"application/json"},
+   body:JSON.stringify({
+    contact:data.get("contact"),
+    link:data.get("link"),
+    service:data.get("service"),
+    details:"Quantity: "+data.get("quantity")+"\nInstructions: "+(data.get("notes")||"None")
+   })
+  });
+  const answer=await response.json();
+  if(!response.ok) throw new Error(answer.error||"Could not save order");
+  result.innerHTML="Order submitted successfully!<br><b>Order ID: "+answer.order_code+"</b><br>Save this ID to track your order.";
+  form.reset();
+ }catch(error){
+  result.textContent=error.message;
+ }
+ submitBtn.disabled=false;
+ submitBtn.textContent="SUBMIT ORDER";
 });
 
-function copyOrder() {
-  if (navigator.clipboard && window.isSecureContext) {
-    navigator.clipboard.writeText(orderText)
-      .then(() => alert("Order details copied!"))
-      .catch(() => alert("Please copy your order summary manually."));
-  } else {
-    alert("Please copy your order summary manually.");
+async function trackOrder(){
+ const code=document.getElementById("trackCode").value.trim();
+ const box=document.getElementById("trackingResult");
+ box.hidden=false;
+ if(!code){box.textContent="Enter your order ID.";return;}
+ box.textContent="Checking order...";
+ try{
+  const response=await fetch("/api/orders/"+encodeURIComponent(code));
+  const data=await response.json();
+  if(!response.ok) throw new Error(data.error||"Order not found");
+  box.textContent="Order: "+data.order_code+" | Status: "+data.status+" | Payment: "+(data.payment_status||"Not paid")+(data.price_ghs?" | Amount: GH₵"+data.price_ghs:"");
+  if(data.payment_status!=="Paid" && data.price_ghs>0){
+   const button=document.createElement("button");
+   button.textContent="PAY GH₵"+data.price_ghs;
+   button.onclick=()=>payOrder(data.order_code);
+   box.appendChild(button);
   }
+ }catch(error){box.textContent=error.message;}
+}
+
+async function payOrder(code){
+ const box=document.getElementById("trackingResult");
+ box.textContent="Preparing secure Paystack checkout...";
+ try{
+  const response=await fetch("/api/orders/"+encodeURIComponent(code)+"/pay",{method:"POST"});
+  const data=await response.json();
+  if(!response.ok) throw new Error(data.error||"Payment could not start");
+  if(!data.authorization_url) throw new Error("Payment link was not returned.");
+  window.location.href=data.authorization_url;
+ }catch(error){box.textContent=error.message;}
 }
 </script>
+</body>
+</html>
