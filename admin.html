@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TIKGROW Admin</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#080a12;color:white;font-family:Arial,sans-serif;padding:20px}
+main{max-width:1000px;margin:auto}
+h1{color:#25f4ee}
+.card{background:#151927;padding:20px;border-radius:14px;margin:15px 0}
+input,button,select{width:100%;padding:13px;margin:7px 0;border-radius:8px;border:0}
+button{background:#25f4ee;color:#080a12;font-weight:bold;cursor:pointer}
+.order{background:#20283b;padding:16px;border-radius:10px;margin:12px 0;overflow-wrap:anywhere}
+small{color:#25f4ee}
+.hidden{display:none}
+</style>
+</head>
+<body>
+<main>
+<h1>TIKGROW ADMIN</h1>
+<p>Secure order management</p>
+
+<section class="card" id="login">
+<h2>Admin Login</h2>
+<input id="token" type="password" placeholder="Enter admin token">
+<button onclick="login()">Login</button>
+<p id="loginMessage"></p>
+</section>
+
+<section id="dashboard" class="hidden">
+<div class="card">
+<h2>Orders Dashboard</h2>
+<button onclick="loadOrders()">Refresh Orders</button>
+<button onclick="logout()">Logout</button>
+<p id="message"></p>
+<div id="orders">Loading orders...</div>
+</div>
+</section>
+</main>
+
+<script>
+const API = "/api/admin/orders";
+let adminToken = "";
+
+async function login(){
+const value=document.getElementById("token").value.trim();
+if(!value){alert("Enter your admin token");return;}
+
+adminToken=value;
+const response=await fetch(API,{
+headers:{"x-admin-token":adminToken}
+});
+const result=await response.json();
+
+if(!response.ok){
+adminToken="";
+document.getElementById("loginMessage").textContent="Login failed. Check your token.";
+return;
+}
+
+sessionStorage.setItem("tikgrow_admin_token",value);
+document.getElementById("login").classList.add("hidden");
+document.getElementById("dashboard").classList.remove("hidden");
+loadOrders();
+}
+
+async function loadOrders(){
+adminToken=adminToken||sessionStorage.getItem("tikgrow_admin_token")||"";
+const box=document.getElementById("orders");
+box.textContent="Loading orders...";
+
+try{
+const response=await fetch(API,{
+headers:{"x-admin-token":adminToken}
+});
+const result=await response.json();
+
+if(!response.ok) throw new Error(result.message||"Could not load orders");
+
+if(!result.orders.length){
+box.textContent="No orders yet.";
+return;
+}
+
+box.innerHTML="";
+
+result.orders.forEach(order=>{
+const item=document.createElement("div");
+item.className="order";
+
+const heading=document.createElement("h3");
+heading.textContent=order.order_code;
+
+const details=document.createElement("p");
+details.textContent=
+"Customer: "+order.customer_name+
+"\nContact: "+order.contact+
+"\nService: "+order.service+
+"\nTikTok: "+order.tiktok_link+
+"\nDetails: "+order.details+
+"\nStatus: "+order.status;
+
+details.style.whiteSpace="pre-wrap";
+
+const select=document.createElement("select");
+["New","Awaiting Payment","Paid","In Progress","Completed","Cancelled"].forEach(status=>{
+const option=document.createElement("option");
+option.value=status;
+option.textContent=status;
+option.selected=order.status===status;
+select.appendChild(option);
+});
+
+const button=document.createElement("button");
+button.textContent="Update Status";
+button.onclick=()=>updateStatus(order.id,select.value);
+
+item.append(heading,details,select,button);
+box.appendChild(item);
+});
+}catch(error){
+box.textContent=error.message;
+}
+}
+
+async function updateStatus(id,status){
+try{
+const response=await fetch(API+"/"+encodeURIComponent(id),{
+method:"PATCH",
+headers:{
+"Content-Type":"application/json",
+"x-admin-token":adminToken
+},
+body:JSON.stringify({status})
+});
+const result=await response.json();
+if(!response.ok) throw new Error(result.message||"Update failed");
+alert("Order status updated");
+loadOrders();
+}catch(error){
+alert(error.message);
+}
+}
+
+function logout(){
+sessionStorage.removeItem("tikgrow_admin_token");
+adminToken="";
+document.getElementById("dashboard").classList.add("hidden");
+document.getElementById("login").classList.remove("hidden");
+document.getElementById("token").value="";
+}
+</script>
+</body>
+</html>
