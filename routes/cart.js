@@ -1,62 +1,47 @@
 
 const express = require("express");
 const { pool } = require("../db");
-const { requireLogin } = require("../middleware/auth");
+const requireAuth = require("../middleware/auth");
 
 const router = express.Router();
 
-router.use(requireLogin);
+router.use(requireAuth);
 
-// VIEW CUSTOMER CART
+// GET CUSTOMER CART
 router.get("/", async (req, res) => {
   try {
-    const userId = req.session.user.id;
-
     const result = await pool.query(
       `SELECT
-         ci.id,
-         ci.product_id,
-         ci.quantity,
-         p.name,
-         p.price,
-         p.currency,
-         p.stock,
-         p.is_active,
-         (
-           SELECT pi.image_url
-           FROM product_images pi
-           WHERE pi.product_id = p.id
-           ORDER BY pi.id ASC
-           LIMIT 1
-         ) AS image_url
-       FROM cart_items ci
+        ci.id AS cart_item_id,
+        p.id AS product_id,
+        p.name,
+        p.description,
+        p.image_url,
+        p.price,
+        p.stock,
+        ci.quantity,
+        (p.price * ci.quantity) AS subtotal
+       FROM carts c
+       JOIN cart_items ci ON ci.cart_id = c.id
        JOIN products p ON p.id = ci.product_id
-       WHERE ci.user_id = $1
+       WHERE c.user_id = $1
        ORDER BY ci.id DESC`,
-      [userId]
+      [req.user.id]
     );
 
-    const items = result.rows.map(item => ({
-      ...item,
-      subtotal: Number(item.price) * item.quantity
-    }));
-
-    const total = items.reduce(
-      (sum, item) => sum + item.subtotal,
+    const total = result.rows.reduce(
+      (sum, item) => sum + Number(item.subtotal),
       0
     );
 
-    return res.json({
+    res.json({
       success: true,
-      items,
-      total,
-      itemCount: items.reduce((sum, item) => sum + item.quantity, 0)
+      items: result.rows,
+      total: total.toFixed(2)
     });
-
   } catch (error) {
-    console.error("Cart error:", error.message);
-
-    return res.status(500).json({
+    console.error("Cart loading error:", error.message);
+    res.status(500).json({
       success: false,
       message: "Unable to load your cart."
     });
@@ -64,20 +49,20 @@ router.get("/", async (req, res) => {
 });
 
 // ADD PRODUCT TO CART
-router.post("/add", async (req, res) => {
-  const productId = Number(req.body?.productId);
-  const quantity = Number(req.body?.quantity || 1);
+router.post("/items", async (req, res) => {
+  const productId = Number(req.body.product_id);
+  const quantity = Number(req.body.quantity ?? 1);
 
   if (
-    !Number.isSafeInteger(productId) ||
+    !Number.isInteger(productId) ||
     productId < 1 ||
-    !Number.isSafeInteger(quantity) ||
+    !Number.isInteger(quantity) ||
     quantity < 1 ||
     quantity > 100
   ) {
     return res.status(400).json({
       success: false,
-      message: "Invalid product or quantity."
+      message: "Enter a valid product and quantity."
     });
   }
 
@@ -86,7 +71,7 @@ router.post("/add", async (req, res) => {
   try {
     await client.query("BEGIN");
 
-    const product = await client.query(
+    const productResult = await client.query(
       `SELECT id, stock, is_active
        FROM products
        WHERE id = $1
@@ -95,81 +80,96 @@ router.post("/add", async (req, res) => {
     );
 
     if (
-      product.rows.length === 0 ||
-      !product.rows[0].is_active
+      !productResult.rows.length ||
+      !productResult.rows[0].is_active
     ) {
       await client.query("ROLLBACK");
-
       return res.status(404).json({
         success: false,
-        message: "Product is unavailable."
+        message: "Product not found."
       });
     }
 
-    const existing = await client.query(
-      `SELECT quantity
-       FROM cart_items
-       WHERE user_id = $1 AND product_id = $2
-       FOR UPDATE`,
-      [req.session.user.id, productId]
+    let cartResult = await client.query(
+      "SELECT id FROM carts WHERE user_id = $1",
+      [req.user.id]
     );
 
-    const newQuantity =
-      quantity + (existing.rows[0]?.quantity || 0);
+    if (!cartResult.rows.length) {
+      cartResult = await client.query(
+        `INSERT INTO carts (user_id)
+         VALUES ($1)
+         RETURNING id`,
+        [req.user.id]
+      );
+    }
 
-    if (newQuantity > product.rows[0].stock) {
+    const cartId = cartResult.rows[0].id;
+
+    const existing = await client.query(
+      `SELECT quantity FROM cart_items
+       WHERE cart_id = $1 AND product_id = $2`,
+      [cartId, productId]
+    );
+
+    const currentQuantity = existing.rows.length
+      ? Number(existing.rows[0].quantity)
+      : 0;
+
+    const newQuantity = currentQuantity + quantity;
+    const stock = Number(productResult.rows[0].stock);
+
+    if (newQuantity > stock) {
       await client.query("ROLLBACK");
-
       return res.status(400).json({
         success: false,
-        message: "Requested quantity exceeds available stock."
+        message: "Not enough stock available."
       });
     }
 
     await client.query(
-      `INSERT INTO cart_items (user_id, product_id, quantity)
+      `INSERT INTO cart_items (cart_id, product_id, quantity)
        VALUES ($1, $2, $3)
-       ON CONFLICT (user_id, product_id)
+       ON CONFLICT (cart_id, product_id)
        DO UPDATE SET quantity = EXCLUDED.quantity`,
-      [req.session.user.id, productId, newQuantity]
+      [cartId, productId, newQuantity]
     );
 
     await client.query("COMMIT");
 
-    return res.json({
+    res.json({
       success: true,
-      message: "Product added to cart."
+      message: "Product added to your cart."
     });
 
   } catch (error) {
     await client.query("ROLLBACK");
-    console.error("Add cart error:", error.message);
+    console.error("Add cart item error:", error.message);
 
-    return res.status(500).json({
+    res.status(500).json({
       success: false,
       message: "Unable to add product to cart."
     });
-
   } finally {
     client.release();
   }
 });
 
-// UPDATE CART QUANTITY
-router.put("/:id", async (req, res) => {
-  const cartItemId = Number(req.params.id);
-  const quantity = Number(req.body?.quantity);
+// UPDATE CART ITEM QUANTITY
+router.patch("/items/:id", async (req, res) => {
+  const itemId = Number(req.params.id);
+  const quantity = Number(req.body.quantity);
 
   if (
-    !Number.isSafeInteger(cartItemId) ||
-    cartItemId < 1 ||
-    !Number.isSafeInteger(quantity) ||
+    !Number.isInteger(itemId) ||
+    itemId < 1 ||
+    !Number.isInteger(quantity) ||
     quantity < 1 ||
     quantity > 100
   ) {
     return res.status(400).json({
       success: false,
-      message: "Invalid cart item or quantity."
+      message: "Invalid item or quantity."
     });
   }
 
@@ -177,32 +177,31 @@ router.put("/:id", async (req, res) => {
     const result = await pool.query(
       `UPDATE cart_items ci
        SET quantity = $1
-       FROM products p
+       FROM carts c, products p
        WHERE ci.id = $2
-         AND ci.user_id = $3
-         AND p.id = ci.product_id
+         AND ci.cart_id = c.id
+         AND ci.product_id = p.id
+         AND c.user_id = $3
          AND p.is_active = TRUE
          AND p.stock >= $1
        RETURNING ci.id`,
-      [quantity, cartItemId, req.session.user.id]
+      [quantity, itemId, req.user.id]
     );
 
-    if (result.rows.length === 0) {
+    if (!result.rows.length) {
       return res.status(400).json({
         success: false,
-        message: "Cart item not found or stock is insufficient."
+        message: "Item not found or insufficient stock."
       });
     }
 
-    return res.json({
+    res.json({
       success: true,
-      message: "Cart updated."
+      message: "Cart quantity updated."
     });
-
   } catch (error) {
-    console.error("Update cart error:", error.message);
-
-    return res.status(500).json({
+    console.error("Cart update error:", error.message);
+    res.status(500).json({
       success: false,
       message: "Unable to update cart."
     });
@@ -210,42 +209,34 @@ router.put("/:id", async (req, res) => {
 });
 
 // REMOVE CART ITEM
-router.delete("/:id", async (req, res) => {
+router.delete("/items/:id", async (req, res) => {
   try {
-    const cartItemId = Number(req.params.id);
-
-    if (!Number.isSafeInteger(cartItemId) || cartItemId < 1) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid cart item."
-      });
-    }
-
     const result = await pool.query(
-      `DELETE FROM cart_items
-       WHERE id = $1 AND user_id = $2
-       RETURNING id`,
-      [cartItemId, req.session.user.id]
+      `DELETE FROM cart_items ci
+       USING carts c
+       WHERE ci.id = $1
+         AND ci.cart_id = c.id
+         AND c.user_id = $2
+       RETURNING ci.id`,
+      [req.params.id, req.user.id]
     );
 
-    if (result.rows.length === 0) {
+    if (!result.rows.length) {
       return res.status(404).json({
         success: false,
         message: "Cart item not found."
       });
     }
 
-    return res.json({
+    res.json({
       success: true,
       message: "Product removed from cart."
     });
-
   } catch (error) {
-    console.error("Remove cart error:", error.message);
-
-    return res.status(500).json({
+    console.error("Cart removal error:", error.message);
+    res.status(500).json({
       success: false,
-      message: "Unable to remove cart item."
+      message: "Unable to remove product."
     });
   }
 });
@@ -254,19 +245,20 @@ router.delete("/:id", async (req, res) => {
 router.delete("/", async (req, res) => {
   try {
     await pool.query(
-      "DELETE FROM cart_items WHERE user_id = $1",
-      [req.session.user.id]
+      `DELETE FROM cart_items
+       WHERE cart_id IN (
+         SELECT id FROM carts WHERE user_id = $1
+       )`,
+      [req.user.id]
     );
 
-    return res.json({
+    res.json({
       success: true,
       message: "Cart cleared."
     });
-
   } catch (error) {
     console.error("Clear cart error:", error.message);
-
-    return res.status(500).json({
+    res.status(500).json({
       success: false,
       message: "Unable to clear cart."
     });
