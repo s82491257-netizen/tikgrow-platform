@@ -643,8 +643,7 @@ app.get("/payment-callback", async (req, res) => {
     const orderCode = await confirmPayment(reference);
 
     return res.redirect(
-      "/track.html?order=" + encodeURIComponent(orderCode) + "&payment=success"
-    );
+      "/payment-success.html?order=" + encodeURIComponent(orderCode)
   } catch (error) {
     console.error("Payment callback error:", error.message);
     return res.redirect("/?payment=verify-failed");
