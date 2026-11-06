@@ -4,6 +4,17 @@ const crypto = require("crypto");
 const COOKIE_NAME = "savcel_session";
 
 function requireAuth(req, res, next) {
+  function denyAccess(message) {
+    if (req.accepts("html")) {
+      return res.redirect("/auth");
+    }
+
+    return res.status(401).json({
+      success: false,
+      message
+    });
+  }
+
   try {
     const secret = process.env.AUTH_SECRET;
 
@@ -18,13 +29,12 @@ function requireAuth(req, res, next) {
 
     const sessionCookie = cookieHeader
       .split(";")
-      .find(cookie => cookie.trim().startsWith(COOKIE_NAME + "="));
+      .find(cookie =>
+        cookie.trim().startsWith(COOKIE_NAME + "=")
+      );
 
     if (!sessionCookie) {
-      return res.status(401).json({
-        success: false,
-        message: "Please log in to continue."
-      });
+      return denyAccess("Please log in to continue.");
     }
 
     const token = sessionCookie.trim()
@@ -33,10 +43,7 @@ function requireAuth(req, res, next) {
     const parts = token.split(".");
 
     if (parts.length !== 2) {
-      return res.status(401).json({
-        success: false,
-        message: "Invalid login session."
-      });
+      return denyAccess("Invalid login session.");
     }
 
     const [payload, signature] = parts;
@@ -46,17 +53,14 @@ function requireAuth(req, res, next) {
       .update(payload)
       .digest("base64url");
 
-    const suppliedBuffer = Buffer.from(signature);
+    const supplied = Buffer.from(signature);
     const expectedBuffer = Buffer.from(expected);
 
     if (
-      suppliedBuffer.length !== expectedBuffer.length ||
-      !crypto.timingSafeEqual(suppliedBuffer, expectedBuffer)
+      supplied.length !== expectedBuffer.length ||
+      !crypto.timingSafeEqual(supplied, expectedBuffer)
     ) {
-      return res.status(401).json({
-        success: false,
-        message: "Invalid login session."
-      });
+      return denyAccess("Invalid login session.");
     }
 
     const session = JSON.parse(
@@ -68,25 +72,16 @@ function requireAuth(req, res, next) {
       !Number.isInteger(session.exp) ||
       session.exp <= Math.floor(Date.now() / 1000)
     ) {
-      return res.status(401).json({
-        success: false,
-        message: "Your session has expired. Please log in again."
-      });
+      return denyAccess("Your session has expired.");
     }
 
-    req.user = {
-      id: session.id
-    };
+    req.user = { id: session.id };
 
     next();
 
   } catch (error) {
     console.error("Authentication error:", error.message);
-
-    return res.status(401).json({
-      success: false,
-      message: "Please log in again."
-    });
+    return denyAccess("Please log in again.");
   }
 }
 
