@@ -1,0 +1,130 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Welcome to SavCel Hub</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:radial-gradient(circle at top right,#352064,#100b20 55%);color:white;font-family:Arial,sans-serif;display:flex;align-items:center;justify-content:center;padding:20px}
+.card{width:100%;max-width:430px;background:#19132b;border:1px solid #42316b;border-radius:22px;padding:28px;box-shadow:0 20px 70px #0008}
+.logo{text-align:center;font-size:29px;font-weight:900;letter-spacing:1px}
+.logo span{color:#a77bff}
+.subtitle{text-align:center;color:#bdb3d1;margin:10px 0 25px}
+.tabs{display:flex;background:#100b20;border-radius:12px;padding:5px;margin-bottom:22px}
+.tabs button{width:50%;border:0;padding:12px;background:transparent;color:#aaa;border-radius:9px;font-weight:bold}
+.tabs button.active{background:#713cff;color:white}
+label{display:block;margin:14px 0 7px;color:#ddd;font-size:14px}
+input{width:100%;padding:14px;border-radius:10px;border:1px solid #44365e;background:#100b20;color:white;font-size:15px;outline:none}
+input:focus{border-color:#956bff}
+.submit{width:100%;padding:15px;margin-top:22px;border:0;border-radius:10px;background:linear-gradient(100deg,#713cff,#2485ff);color:white;font-size:16px;font-weight:bold}
+.message{text-align:center;margin-top:16px;color:#d6c9ff;font-size:14px;overflow-wrap:anywhere}
+.small{text-align:center;color:#9288a5;font-size:12px;margin-top:25px}
+.hidden{display:none}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">SAVCEL <span>HUB</span></div>
+  <p class="subtitle">Your premium digital marketplace</p>
+
+  <div class="tabs">
+    <button id="loginTab" class="active" type="button">Login</button>
+    <button id="registerTab" type="button">Create Account</button>
+  </div>
+
+  <form id="loginForm">
+    <label>Email address</label>
+    <input type="email" id="loginEmail" required autocomplete="email">
+    <label>Password</label>
+    <input type="password" id="loginPassword" required autocomplete="current-password">
+    <button class="submit" type="submit">LOGIN TO SAVCEL HUB</button>
+  </form>
+
+  <form id="registerForm" class="hidden">
+    <label>Full name</label>
+    <input id="fullName" required minlength="2" maxlength="150" autocomplete="name">
+    <label>Phone number</label>
+    <input id="phone" type="tel" maxlength="30" autocomplete="tel">
+    <label>Email address</label>
+    <input id="registerEmail" type="email" required autocomplete="email">
+    <label>Create password</label>
+    <input id="registerPassword" type="password" required minlength="8" maxlength="128" autocomplete="new-password">
+    <button class="submit" type="submit">CREATE MY ACCOUNT</button>
+  </form>
+
+  <div id="message" class="message" role="status"></div>
+  <p class="small">Secure customer access · SavCel Hub</p>
+</div>
+
+<script>
+const loginForm=document.getElementById("loginForm");
+const registerForm=document.getElementById("registerForm");
+const message=document.getElementById("message");
+const loginTab=document.getElementById("loginTab");
+const registerTab=document.getElementById("registerTab");
+
+function showLogin(){
+ loginForm.classList.remove("hidden");
+ registerForm.classList.add("hidden");
+ loginTab.classList.add("active");
+ registerTab.classList.remove("active");
+ message.textContent="";
+}
+
+function showRegister(){
+ registerForm.classList.remove("hidden");
+ loginForm.classList.add("hidden");
+ registerTab.classList.add("active");
+ loginTab.classList.remove("active");
+ message.textContent="";
+}
+
+loginTab.onclick=showLogin;
+registerTab.onclick=showRegister;
+
+async function sendRequest(url,data){
+ const response=await fetch(url,{
+  method:"POST",
+  credentials:"same-origin",
+  headers:{"Content-Type":"application/json"},
+  body:JSON.stringify(data)
+ });
+ const result=await response.json();
+ if(!response.ok) throw new Error(result.message||"Request failed");
+ return result;
+}
+
+loginForm.addEventListener("submit",async event=>{
+ event.preventDefault();
+ message.textContent="Signing you in...";
+ try{
+  await sendRequest("/api/auth/login",{
+   email:document.getElementById("loginEmail").value,
+   password:document.getElementById("loginPassword").value
+  });
+  window.location.replace("/");
+ }catch(error){
+  message.textContent=error.message;
+ }
+});
+
+registerForm.addEventListener("submit",async event=>{
+ event.preventDefault();
+ message.textContent="Creating your account...";
+ try{
+  await sendRequest("/api/auth/register",{
+   full_name:document.getElementById("fullName").value,
+   phone:document.getElementById("phone").value,
+   email:document.getElementById("registerEmail").value,
+   password:document.getElementById("registerPassword").value
+  });
+  window.location.replace("/");
+ }catch(error){
+  message.textContent=error.message;
+ }
+});
+</script>
+</body>
+</html>
