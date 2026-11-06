@@ -1,6 +1,4 @@
 
-
-
 require("dotenv").config();
 
 const express = require("express");
@@ -8,6 +6,7 @@ const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
 const path = require("path");
 const fs = require("fs");
+const { pool, testDatabase } = require("./db");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -35,6 +34,26 @@ app.get("/api/health", (req, res) => {
   });
 });
 
+app.get("/api/db-health", async (req, res) => {
+  try {
+    const result = await testDatabase();
+
+    res.json({
+      success: true,
+      database: "connected",
+      time: result.current_time
+    });
+  } catch (error) {
+    console.error("Database health check failed:", error.message);
+
+    res.status(500).json({
+      success: false,
+      database: "disconnected",
+      message: "Database connection failed"
+    });
+  }
+});
+
 app.get("/api", (req, res) => {
   res.json({
     success: true,
@@ -42,19 +61,19 @@ app.get("/api", (req, res) => {
   });
 });
 
-// SERVE HOMEPAGE FROM ROOT
 app.get("/", (req, res) => {
   const homepage = path.join(__dirname, "index.html");
 
   if (!fs.existsSync(homepage)) {
-    return res.status(404).send("Homepage index.html was not found.");
+    return res.status(404).send("Homepage not found.");
   }
 
   res.sendFile(homepage);
 });
 
-// SERVE OTHER STATIC FILES
-app.use(express.static(__dirname));
+// Serve only the homepage for now.
+// Do not expose server files or environment secrets.
+app.use(express.static(path.join(__dirname, "public")));
 
 app.use((req, res) => {
   res.status(404).json({
@@ -64,7 +83,7 @@ app.use((req, res) => {
 });
 
 app.use((err, req, res, next) => {
-  console.error("Server error:", err.stack);
+  console.error("Server error:", err.message);
 
   res.status(500).json({
     success: false,
