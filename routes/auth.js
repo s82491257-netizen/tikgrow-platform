@@ -43,7 +43,7 @@ function createSession(userId) {
     SESSION_DAYS * 24 * 60 * 60;
 
   const payload = Buffer.from(JSON.stringify({
-    id: userId,
+    id: Number(userId),
     exp: expires
   })).toString("base64url");
 
