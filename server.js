@@ -169,6 +169,46 @@ async function adminOnly(req, res, next) {
   next();
 }
 
+// SMM AFRICA API CONNECTION
+async function smmRequest(action) {
+  const apiUrl = process.env.SMM_API_URL || "https://smm.africa/api/v3";
+  const apiKey = process.env.SMM_API_KEY;
+
+  if (!apiKey) {
+    throw new Error("SMM_API_KEY is not configured in Render.");
+  }
+
+  const url = new URL(apiUrl);
+
+  if (url.protocol !== "https:" || url.hostname !== "smm.africa") {
+    throw new Error("Invalid SMM API URL configuration.");
+  }
+
+  const response = await fetch(url.toString(), {
+    method: "POST",
+    headers: {
+      "Authorization": "Bearer " + apiKey,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ action }),
+    signal: AbortSignal.timeout(20000)
+  });
+
+  const data = await response.json();
+
+  if (!response.ok || data.error) {
+    console.error("SMM provider error:", {
+      status: response.status,
+      code: data.code || "UNKNOWN",
+      request_id: data.request_id || null
+    });
+    throw new Error("Provider connection failed. Check the API credentials and provider account.");
+  }
+
+  return data;
+}
+
+
 // DATABASE SETUP
 async function initializeDatabase() {
   await pool.query(`
@@ -666,6 +706,53 @@ app.get("/api/admin/orders", adminOnly, async (req, res) => {
     res.status(500).json({ error: "Could not load orders." });
   }
 });
+
+// ADMIN: TEST SMM AFRICA CONNECTION
+app.post("/api/admin/provider/check", adminOnly, async (req, res) => {
+  try {
+    const [balance, services] = await Promise.all([
+      smmRequest("balance"),
+      smmRequest("services")
+    ]);
+
+    if (!Array.isArray(services)) {
+      throw new Error("Provider returned an unexpected service list.");
+    }
+
+    const tiktokServices = services
+      .filter(item =>
+        /tiktok/i.test(
+          String(item.name || "") + " " +
+          String(item.category || "")
+        )
+      )
+      .map(item => ({
+        service: item.service,
+        name: item.name,
+        rate: item.rate,
+        min: item.min,
+        max: item.max,
+        type: item.type
+      }));
+
+    res.json({
+      success: true,
+      message: "SMM Africa connection successful.",
+      balance: balance.balance,
+      currency: balance.currency,
+      total_services: services.length,
+      tiktok_services: tiktokServices
+    });
+
+  } catch (error) {
+    console.error("Provider check error:", error.message);
+    res.status(502).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
 
 // ADMIN: UPDATE PROMOTION STATUS
 app.patch("/api/admin/orders/:id", adminOnly, async (req, res) => {
