@@ -15,6 +15,7 @@ const requireAuth = require("./middleware/auth");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// BASIC SECURITY
 app.disable("x-powered-by");
 app.set("trust proxy", 1);
 
@@ -35,7 +36,7 @@ app.use(rateLimit({
   legacyHeaders: false
 }));
 
-// PUBLIC HEALTH CHECK
+// HEALTH CHECK
 app.get("/api/health", (req, res) => {
   res.json({
     success: true,
@@ -64,9 +65,12 @@ app.get("/api/db-health", async (req, res) => {
   }
 });
 
-// PUBLIC AUTHENTICATION ROUTES
+// AUTHENTICATION API
 app.use("/api/auth", authRoutes);
-const productsRoutes = require("./routes/products");
+
+// PRODUCTS AND STORE API
+app.use("/api/products", productsRoutes);
+
 // LOGIN AND REGISTRATION PAGE
 app.get("/auth", (req, res) => {
   const authPage = path.join(
@@ -82,6 +86,13 @@ app.get("/auth", (req, res) => {
   res.sendFile(authPage);
 });
 
+// PROTECTED STORE PAGE
+app.get("/store", requireAuth, (req, res) => {
+  res.sendFile(
+    path.join(__dirname, "public", "store.html")
+  );
+});
+
 // PROTECTED MY ACCOUNT PAGE
 app.get("/account", requireAuth, (req, res) => {
   res.sendFile(
@@ -89,7 +100,7 @@ app.get("/account", requireAuth, (req, res) => {
   );
 });
 
-// PROTECT ALL CUSTOMER PAGES
+// PROTECTED CUSTOMER HOMEPAGE
 app.get("/", requireAuth, (req, res) => {
   const homepage = path.join(__dirname, "index.html");
 
@@ -100,7 +111,7 @@ app.get("/", requireAuth, (req, res) => {
   res.sendFile(homepage);
 });
 
-// PROTECTED CUSTOMER API EXAMPLE
+// PROTECTED CUSTOMER API
 app.get("/api/customer/account", requireAuth, (req, res) => {
   res.json({
     success: true,
@@ -114,15 +125,16 @@ app.use(express.static(
   path.join(__dirname, "public")
 ));
 
-// SEND UNKNOWN PAGE VISITORS TO LOGIN
-app.use((req, res) => {
-  if (req.path.startsWith("/api/")) {
-    return res.status(404).json({
-      success: false,
-      message: "API endpoint not found."
-    });
-  }
+// UNKNOWN API ROUTES
+app.use("/api", (req, res) => {
+  res.status(404).json({
+    success: false,
+    message: "API endpoint not found."
+  });
+});
 
+// UNKNOWN WEBSITE ROUTES
+app.use((req, res) => {
   res.redirect("/auth");
 });
 
