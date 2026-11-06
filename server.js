@@ -196,3 +196,4 @@ setupDatabase()
     console.error("Database setup failed:", error.message);
     process.exit(1);
   });
+
