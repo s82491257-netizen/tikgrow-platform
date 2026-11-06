@@ -79,6 +79,7 @@ function calculatePrice(service, quantity) {
 
   return Math.round(PRICES[service] * quantity / 1000 * 100) / 100;
 }
+
 function normalizePhone(value) {
   let phone = String(value || "").replace(/[\s()-]/g, "");
 
