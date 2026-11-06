@@ -1,228 +1,397 @@
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="theme-color" content="#100b20">
-<title>SavCel Hub | Premium Digital Marketplace</title>
-<meta name="description" content="SavCel Hub — Premium shopping, digital services, data bundles and reseller opportunities.">
+<meta name="theme-color" content="#10091f">
+<title>SavCel Hub | Everything in One Place</title>
+<meta name="description" content="Shop products, data bundles, phone numbers and digital services at SavCel Hub.">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
 <style>
 :root{
---purple:#7545e8;
---blue:#368cff;
---dark:#100b20;
---muted:#777486;
---white:#fff;
---light:#f7f6fb;
+  --bg:#0c0815;
+  --panel:#171126;
+  --panel2:#211735;
+  --purple:#8b5cf6;
+  --blue:#258cff;
+  --white:#ffffff;
+  --muted:#aaa2bc;
+  --line:rgba(255,255,255,.09);
 }
-*{box-sizing:border-box}
-html{scroll-behavior:smooth}
-body{margin:0;background:var(--light);color:#171329;font-family:'DM Sans',Arial,sans-serif}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  background:var(--bg);
+  color:var(--white);
+  font-family:'DM Sans',sans-serif;
+}
 a{text-decoration:none;color:inherit}
-button,input{font:inherit}
-.topbar{background:#090613;color:#ddd;padding:10px 5%;text-align:center;font-size:12px;letter-spacing:1px}
-header{background:#100b20;color:white;padding:19px 5%;display:flex;align-items:center;justify-content:space-between;gap:25px;position:sticky;top:0;z-index:10;border-bottom:1px solid #ffffff16}
-.brand{font-size:25px;font-weight:800;letter-spacing:-1px}
-.brand span{color:#a78bfa}
-.nav{display:flex;gap:28px;align-items:center;font-size:13px;color:#d5d0e2}
-.nav a:hover{color:#a78bfa}
-.actions{display:flex;align-items:center;gap:15px}
-.search{border:1px solid #ffffff30;border-radius:30px;padding:10px 15px;background:#ffffff0c;color:white;width:165px;outline:none}
-.login{border:1px solid #a78bfa;padding:10px 19px;border-radius:25px;color:white;font-size:13px}
-.hero{background:radial-gradient(ellipse at 75% 35%,#54329b 0%,#21133f 36%,#100b20 75%);color:white;padding:85px 7% 95px;min-height:490px;display:flex;align-items:center;position:relative;overflow:hidden}
-.hero:after{content:"";position:absolute;width:380px;height:380px;border:1px solid #ffffff20;border-radius:50%;right:-80px;top:40px;box-shadow:0 0 0 50px #ffffff06,0 0 0 100px #ffffff04}
-.hero-content{max-width:680px;position:relative;z-index:1}
-.eyebrow{color:#bca5ff;font-size:12px;letter-spacing:3px;text-transform:uppercase;font-weight:700}
-.hero h1{font-family:'Playfair Display',serif;font-size:clamp(43px,7vw,76px);line-height:1.08;margin:20px 0}
-.hero h1 span{color:#b59aff}
-.hero p{color:#d0c9df;line-height:1.9;font-size:15px;max-width:510px}
-.primary{display:inline-block;background:linear-gradient(100deg,#7545e8,#368cff);color:white;padding:15px 27px;border-radius:30px;margin-top:20px;font-weight:700;font-size:13px;box-shadow:0 8px 25px #7545e850}
-.secondary{display:inline-block;border:1px solid #ffffff60;padding:14px 25px;border-radius:30px;margin:20px 0 0 10px;font-size:13px}
-.trust{display:flex;justify-content:space-around;flex-wrap:wrap;gap:15px;background:white;padding:24px 5%;border-bottom:1px solid #eee}
-.trust div{font-size:12px;font-weight:700;color:#403653}
-.trust span{color:#7545e8;margin-right:7px}
-.section{padding:65px 5%;max-width:1450px;margin:auto}
-.section-head{display:flex;align-items:end;justify-content:space-between;gap:15px;margin-bottom:28px}
-.kicker{color:#7545e8;font-size:11px;letter-spacing:2px;font-weight:800;text-transform:uppercase}
-.section h2{font-family:'Playfair Display',serif;font-size:35px;margin:9px 0}
-.sub{color:var(--muted);font-size:13px;line-height:1.8}
-.view{font-size:12px;color:#7545e8;font-weight:800}
-.categories{display:grid;grid-template-columns:repeat(6,1fr);gap:15px}
-.category{background:white;border:1px solid #eee;border-radius:15px;padding:24px 10px;text-align:center;transition:.25s}
-.category:hover{transform:translateY(-5px);box-shadow:0 12px 30px #25134d12}
-.category .emoji{font-size:34px}
-.category h3{font-size:12px;margin:13px 0 0}
-.product-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:20px}
-.product{background:white;border-radius:15px;overflow:hidden;border:1px solid #eee;transition:.25s}
-.product:hover{transform:translateY(-5px);box-shadow:0 15px 35px #21133f15}
-.product img{width:100%;height:210px;object-fit:cover;background:#eee}
-.product-info{padding:17px}
-.tag{font-size:9px;letter-spacing:1px;color:#7545e8;font-weight:800;text-transform:uppercase}
-.product h3{font-size:15px;margin:8px 0}
-.product p{font-size:12px;color:var(--muted);line-height:1.6}
-.price{font-size:14px;font-weight:800;margin-top:15px}
-.dark-section{background:#100b20;color:white;padding:65px 6%}
-.dark-inner{max-width:1200px;margin:auto;display:flex;justify-content:space-between;align-items:center;gap:35px;flex-wrap:wrap}
-.dark-section h2{font-family:'Playfair Display',serif;font-size:36px;max-width:550px}
-.dark-section p{color:#c4bdd3;line-height:1.8;font-size:14px;max-width:550px}
-.reseller{background:linear-gradient(120deg,#eee8ff,#e9f2ff);border-radius:20px;padding:35px;margin-top:15px}
-.reseller h2{font-family:'Playfair Display',serif;font-size:32px}
-.reseller p{font-size:14px;color:#625b72;line-height:1.8}
-footer{background:#090613;color:white;padding:55px 6% 25px}
-.footer-grid{max-width:1300px;margin:auto;display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:35px}
-footer h3{font-size:14px}
-footer p,footer a{font-size:12px;color:#aaa4b7;line-height:2;display:block}
-.copyright{text-align:center;border-top:1px solid #ffffff20;margin-top:35px;padding-top:22px;color:#888;font-size:11px}
-@media(max-width:900px){
-.categories{grid-template-columns:repeat(3,1fr)}
-.product-grid{grid-template-columns:repeat(2,1fr)}
-.nav{display:none}
-.footer-grid{grid-template-columns:1fr 1fr}
+button{font:inherit;cursor:pointer}
+.container{width:min(1180px,92%);margin:auto}
+header{
+  position:sticky;top:0;z-index:20;
+  background:rgba(12,8,21,.94);
+  backdrop-filter:blur(18px);
+  border-bottom:1px solid var(--line);
 }
-@media(max-width:520px){
-header{padding:15px 4%}
-.brand{font-size:21px}
-.search{display:none}
-.hero{padding:65px 6%;min-height:440px}
-.hero h1{font-size:46px}
-.section{padding:48px 5%}
-.section h2{font-size:29px}
-.categories{grid-template-columns:repeat(2,1fr)}
-.product-grid{gap:12px}
-.product img{height:145px}
-.product-info{padding:12px}
-.footer-grid{grid-template-columns:1fr 1fr}
-.secondary{margin-left:0}
+.nav{
+  height:76px;display:flex;align-items:center;
+  justify-content:space-between;gap:15px;
+}
+.logo{font-size:23px;font-weight:800;letter-spacing:-1px}
+.logo span{color:#8b5cf6}
+.navlinks{display:flex;gap:25px;color:#c9c2d6;font-size:13px}
+.navlinks a:hover{color:#fff}
+.actions{display:flex;align-items:center;gap:10px}
+.btn{
+  border:0;border-radius:12px;padding:12px 17px;
+  font-weight:700;font-size:12px;
+}
+.btn-primary{
+  color:white;
+  background:linear-gradient(110deg,#7545e8,#258cff);
+  box-shadow:0 7px 25px #582bd544;
+}
+.btn-outline{
+  background:transparent;border:1px solid var(--line);color:white;
+}
+.hero{
+  padding:78px 0 55px;
+  background:
+  radial-gradient(ellipse at 85% 15%,#35216b88,transparent 38%),
+  radial-gradient(ellipse at 5% 70%,#124f8a44,transparent 40%);
+}
+.hero-grid{
+  display:grid;grid-template-columns:1.15fr .85fr;
+  gap:35px;align-items:center;
+}
+.eyebrow{
+  color:#a78bfa;font-size:11px;font-weight:800;
+  letter-spacing:3px;text-transform:uppercase;
+  margin-bottom:19px;
+}
+h1{
+  font-family:Manrope,sans-serif;
+  font-size:clamp(42px,6vw,70px);
+  line-height:1.08;letter-spacing:-3px;
+  max-width:690px;
+}
+h1 span{
+  background:linear-gradient(90deg,#a78bfa,#38a5ff);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.hero-text{
+  color:var(--muted);line-height:1.8;
+  max-width:490px;margin:22px 0 28px;font-size:15px;
+}
+.hero-buttons{display:flex;gap:12px;flex-wrap:wrap}
+.hero-art{
+  min-height:340px;border:1px solid #ffffff17;
+  border-radius:28px;overflow:hidden;position:relative;
+  background:
+  radial-gradient(circle at 50% 40%,#7545e8aa,transparent 50%),
+  linear-gradient(140deg,#241344,#101a38);
+  display:flex;align-items:center;justify-content:center;
+}
+.hero-art img{
+  width:100%;height:340px;object-fit:cover;
+  opacity:.72;mix-blend-mode:screen;
+}
+.art-label{
+  position:absolute;bottom:22px;left:22px;
+  background:#10091edb;border:1px solid var(--line);
+  padding:13px 17px;border-radius:13px;
+  font-size:12px;font-weight:700;
+}
+.stats{
+  display:grid;grid-template-columns:repeat(3,1fr);
+  gap:12px;margin-top:45px;
+}
+.stat{
+  border-top:1px solid var(--line);padding-top:16px;
+}
+.stat strong{display:block;font-size:21px}
+.stat small{color:var(--muted);font-size:11px}
+section{padding:55px 0}
+.section-head{
+  display:flex;align-items:end;justify-content:space-between;
+  gap:15px;margin-bottom:25px;
+}
+.section-head h2{font-size:26px;letter-spacing:-1px}
+.section-head p{color:var(--muted);font-size:12px;margin-top:7px}
+.view-link{font-size:12px;color:#9e8bff;font-weight:700}
+.categories{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:15px;
+}
+.category{
+  padding:23px 17px;border:1px solid var(--line);
+  border-radius:18px;background:linear-gradient(145deg,#211735,#130e20);
+  transition:.2s;
+}
+.category:hover,.product:hover{transform:translateY(-4px);border-color:#7958d8}
+.category-icon{
+  width:49px;height:49px;border-radius:14px;
+  background:#ffffff0e;display:grid;place-items:center;
+  font-size:24px;margin-bottom:19px;
+}
+.category h3{font-size:15px;margin-bottom:6px}
+.category p{color:var(--muted);font-size:11px;line-height:1.6}
+.products{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:15px;
+}
+.product{
+  border:1px solid var(--line);border-radius:18px;
+  overflow:hidden;background:#171126;transition:.2s;
+}
+.product img{
+  display:block;width:100%;height:185px;object-fit:cover;
+  background:#211735;
+}
+.product-info{padding:16px}
+.product-tag{
+  color:#a78bfa;font-size:9px;font-weight:800;
+  text-transform:uppercase;letter-spacing:1.3px;
+}
+.product h3{font-size:14px;margin:8px 0}
+.product p{font-size:11px;color:var(--muted);line-height:1.6}
+.product-bottom{
+  display:flex;justify-content:space-between;
+  align-items:center;margin-top:14px;
+}
+.price{font-size:14px;font-weight:800}
+.add{
+  border:0;border-radius:9px;background:#7545e8;
+  color:white;padding:9px 12px;font-size:11px;font-weight:700;
+}
+.promo{
+  border:1px solid #7451d455;border-radius:24px;
+  padding:35px;background:
+  radial-gradient(circle at 90% 20%,#2866c755,transparent 40%),
+  linear-gradient(120deg,#251541,#131c37);
+  display:flex;justify-content:space-between;
+  align-items:center;gap:25px;
+}
+.promo h2{font-size:28px;margin:10px 0}
+.promo p{color:#c0b8d1;font-size:13px;line-height:1.7;max-width:480px}
+.promo .btn{margin-top:19px}
+footer{
+  border-top:1px solid var(--line);
+  padding:35px 0;color:var(--muted);font-size:11px;
+}
+.footer-row{
+  display:flex;justify-content:space-between;gap:20px;
+  flex-wrap:wrap;align-items:center;
+}
+.mobile-note{display:none}
+@media(max-width:850px){
+  .navlinks{display:none}
+  .hero-grid{grid-template-columns:1fr}
+  .hero-art{min-height:240px}
+  .hero-art img{height:240px}
+  .categories{grid-template-columns:repeat(2,1fr)}
+  .products{grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:480px){
+  .nav{height:66px}
+  .logo{font-size:20px}
+  .actions .btn{padding:10px 12px}
+  .hero{padding:55px 0 35px}
+  h1{letter-spacing:-2px}
+  .stats{gap:8px}
+  .stat strong{font-size:17px}
+  section{padding:40px 0}
+  .section-head h2{font-size:22px}
+  .product img{height:140px}
+  .product-info{padding:12px}
+  .promo{padding:25px;display:block}
 }
 </style>
 </head>
 
 <body>
 
-<div class="topbar">
-SAVCEL HUB — YOUR WORLD OF SHOPPING & DIGITAL SERVICES
-</div>
-
 <header>
-<a class="brand" href="/">SavCel<span>Hub.</span></a>
+  <div class="container nav">
+    <a href="/" class="logo">SavCel<span>Hub.</span></a>
 
-<nav class="nav">
-<a href="/">Home</a>
-<a href="#categories">Categories</a>
-<a href="#products">Marketplace</a>
-<a href="#resellers">Become a Reseller</a>
-</nav>
+    <nav class="navlinks">
+      <a href="#categories">Categories</a>
+      <a href="#products">Store</a>
+      <a href="#reseller">Resellers</a>
+      <a href="#contact">Contact</a>
+    </nav>
 
-<div class="actions">
-<input class="search" type="search" placeholder="Search products...">
-<a class="login" href="/login">My Account</a>
-</div>
+    <div class="actions">
+      <a href="/login" class="btn btn-outline">Sign in</a>
+      <a href="/register" class="btn btn-primary">Join now</a>
+    </div>
+  </div>
 </header>
 
+<main>
 <section class="hero">
-<div class="hero-content">
-<div class="eyebrow">A premium digital marketplace</div>
-<h1>Everything.<br>In One <span>Destination.</span></h1>
-<p>Discover premium products, instant digital services, data bundles and international connectivity. Shop smarter. Grow bigger. Experience SavCel Hub.</p>
-<a class="primary" href="#categories">EXPLORE MARKETPLACE →</a>
-<a class="secondary" href="#resellers">BECOME A RESELLER</a>
-</div>
+  <div class="container hero-grid">
+    <div>
+      <div class="eyebrow">The smarter way to shop</div>
+      <h1>Everything you need.<br><span>One powerful hub.</span></h1>
+
+      <p class="hero-text">
+        Discover premium products, mobile data, international numbers
+        and digital services — all in one convenient marketplace.
+      </p>
+
+      <div class="hero-buttons">
+        <a href="#products" class="btn btn-primary">Explore marketplace →</a>
+        <a href="#categories" class="btn btn-outline">Discover services</a>
+      </div>
+
+      <div class="stats">
+        <div class="stat"><strong>24/7</strong><small>Online access</small></div>
+        <div class="stat"><strong>All-in-one</strong><small>Digital marketplace</small></div>
+        <div class="stat"><strong>Easy</strong><small>Shopping experience</small></div>
+      </div>
+    </div>
+
+    <div class="hero-art">
+      <img src="https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=1000&q=85" alt="Modern digital technology">
+      <div class="art-label">SAVCEL HUB • PREMIUM MARKETPLACE</div>
+    </div>
+  </div>
 </section>
 
-<div class="trust">
-<div><span>✦</span> PREMIUM EXPERIENCE</div>
-<div><span>✦</span> SECURE CHECKOUT</div>
-<div><span>✦</span> DIGITAL SERVICES</div>
-<div><span>✦</span> RESELLER OPPORTUNITIES</div>
-</div>
+<section id="categories">
+  <div class="container">
+    <div class="section-head">
+      <div>
+        <h2>Explore categories</h2>
+        <p>Everything organised in one place.</p>
+      </div>
+      <a href="#products" class="view-link">Explore all →</a>
+    </div>
 
-<section class="section" id="categories">
-<div class="section-head">
-<div>
-<div class="kicker">Discover SavCel</div>
-<h2>Explore Collections</h2>
-<p class="sub">Everything you need, carefully organized in one place.</p>
-</div>
-<a class="view" href="#products">EXPLORE ALL →</a>
-</div>
+    <div class="categories">
+      <a class="category" href="#products">
+        <div class="category-icon">🛍️</div>
+        <h3>Fashion & Goods</h3>
+        <p>Sneakers, electronics, furniture and accessories.</p>
+      </a>
 
-<div class="categories">
-<a class="category" href="#products"><div class="emoji">📶</div><h3>Data Bundles</h3></a>
-<a class="category" href="#products"><div class="emoji">🌍</div><h3>Phone Numbers</h3></a>
-<a class="category" href="#products"><div class="emoji">👟</div><h3>Fashion & Shoes</h3></a>
-<a class="category" href="#products"><div class="emoji">💻</div><h3>Electronics</h3></a>
-<a class="category" href="#products"><div class="emoji">🎓</div><h3>Digital Products</h3></a>
-<a class="category" href="#resellers"><div class="emoji">💎</div><h3>Reseller Hub</h3></a>
-</div>
+      <a class="category" href="#products">
+        <div class="category-icon">📶</div>
+        <h3>Data Bundles</h3>
+        <p>MTN, Telecel and AT data services.</p>
+      </a>
+
+      <a class="category" href="#products">
+        <div class="category-icon">🌍</div>
+        <h3>Phone Numbers</h3>
+        <p>Explore legitimate international number options.</p>
+      </a>
+
+      <a class="category" href="#products">
+        <div class="category-icon">⚡</div>
+        <h3>Digital Services</h3>
+        <p>Digital products, vouchers and online services.</p>
+      </a>
+    </div>
+  </div>
 </section>
 
-<section class="section" id="products">
-<div class="section-head">
-<div>
-<div class="kicker">The marketplace</div>
-<h2>Featured Collections</h2>
-<p class="sub">Explore some of the product categories coming to SavCel Hub.</p>
-</div>
-<a class="view" href="#products">VIEW ALL →</a>
-</div>
+<section id="products">
+  <div class="container">
+    <div class="section-head">
+      <div>
+        <h2>Featured collection</h2>
+        <p>A preview of what you can discover at SavCel Hub.</p>
+      </div>
+      <span class="view-link">Coming to the store</span>
+    </div>
 
-<div class="product-grid">
-<div class="product">
-<img src="https://images.unsplash.com/photo-1556656793-08538906a9f8?w=700" alt="Smartphone">
-<div class="product-info"><div class="tag">Technology</div><h3>Smart Electronics</h3><p>Discover electronics and modern gadgets.</p><div class="price">Explore Collection →</div></div>
-</div>
-<div class="product">
-<img src="https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=700" alt="Premium sneakers">
-<div class="product-info"><div class="tag">Fashion</div><h3>Premium Footwear</h3><p>Discover stylish sneakers and footwear.</p><div class="price">Explore Collection →</div></div>
-</div>
-<div class="product">
-<img src="https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=700" alt="Digital payment">
-<div class="product-info"><div class="tag">Digital Services</div><h3>Digital Marketplace</h3><p>Access supported digital products and services.</p><div class="price">Explore Collection →</div></div>
-</div>
-<div class="product">
-<img src="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=700" alt="Connectivity">
-<div class="product-info"><div class="tag">Connectivity</div><h3>Data & Connectivity</h3><p>Explore supported data and number services.</p><div class="price">Explore Collection →</div></div>
-</div>
-</div>
+    <div class="products">
+      <article class="product">
+        <img src="https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=700&q=85" alt="Red sneakers">
+        <div class="product-info">
+          <div class="product-tag">Fashion</div>
+          <h3>Premium Sneakers</h3>
+          <p>Explore footwear collections.</p>
+          <div class="product-bottom">
+            <span class="price">Coming soon</span>
+            <span class="view-link">Explore</span>
+          </div>
+        </div>
+      </article>
+
+      <article class="product">
+        <img src="https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=700&q=85" alt="Headphones">
+        <div class="product-info">
+          <div class="product-tag">Electronics</div>
+          <h3>Wireless Headphones</h3>
+          <p>Discover everyday technology.</p>
+          <div class="product-bottom">
+            <span class="price">Coming soon</span>
+            <span class="view-link">Explore</span>
+          </div>
+        </div>
+      </article>
+
+      <article class="product">
+        <img src="https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=700&q=85" alt="Modern lifestyle products">
+        <div class="product-info">
+          <div class="product-tag">Lifestyle</div>
+          <h3>Everyday Essentials</h3>
+          <p>Quality products for daily life.</p>
+          <div class="product-bottom">
+            <span class="price">Coming soon</span>
+            <span class="view-link">Explore</span>
+          </div>
+        </div>
+      </article>
+
+      <article class="product">
+        <img src="https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=700&q=85" alt="Digital technology">
+        <div class="product-info">
+          <div class="product-tag">Digital</div>
+          <h3>Digital Solutions</h3>
+          <p>Useful digital products and services.</p>
+          <div class="product-bottom">
+            <span class="price">Coming soon</span>
+            <span class="view-link">Explore</span>
+          </div>
+        </div>
+      </article>
+    </div>
+  </div>
 </section>
 
-<section class="dark-section">
-<div class="dark-inner">
-<div>
-<div class="eyebrow">More than a marketplace</div>
-<h2>Shop. Connect. Build Your Business.</h2>
-<p>SavCel Hub brings shopping and digital services together with opportunities for customers and business-minded resellers.</p>
-</div>
-<a class="primary" href="#resellers">DISCOVER SAVCEL →</a>
-</div>
+<section id="reseller">
+  <div class="container">
+    <div class="promo">
+      <div>
+        <div class="eyebrow">Grow with SavCel</div>
+        <h2>Become a SavCel reseller.</h2>
+        <p>
+          Build your own sales journey with access to reseller products,
+          special pricing and an organised account dashboard.
+        </p>
+        <a href="/register" class="btn btn-primary">Become a reseller →</a>
+      </div>
+      <div class="category-icon" style="width:90px;height:90px;font-size:42px">🚀</div>
+    </div>
+  </div>
 </section>
+</main>
 
-<section class="section" id="resellers">
-<div class="reseller">
-<div class="kicker">SavCel Business</div>
-<h2>Build Your Own Reseller Business.</h2>
-<p>Join the SavCel Hub reseller network. Access eligible reseller prices, track your orders and manage your business from your dashboard.</p>
-<a class="primary" href="/register">JOIN THE RESELLER NETWORK →</a>
-</div>
-</section>
-
-<footer>
-<div class="footer-grid">
-<div>
-<a class="brand" href="/">SavCel<span>Hub.</span></a>
-<p>Your premium destination for shopping, digital products, connectivity and reseller services.</p>
-</div>
-<div><h3>Marketplace</h3><a href="#categories">Categories</a><a href="#products">Products</a><a href="#products">Digital Services</a></div>
-<div><h3>Account</h3><a href="/login">Customer Login</a><a href="/register">Create Account</a><a href="/register">Become a Reseller</a></div>
-<div><h3>Support</h3><a href="#">Contact Us</a><a href="#">Help Centre</a><a href="#">Privacy Policy</a></div>
-</div>
-<div class="copyright">© 2026 SavCel Hub. All rights reserved.</div>
+<footer id="contact">
+  <div class="container footer-row">
+    <a href="/" class="logo">SavCel<span>Hub.</span></a>
+    <p>© 2026 SavCel Hub. All rights reserved.</p>
+    <p>Premium shopping. Digital convenience.</p>
+  </div>
 </footer>
 
 </body>
