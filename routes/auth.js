@@ -103,12 +103,12 @@ function readSession(req) {
 }
 
 function setSessionCookie(res, token) {
-  res.cookie(COOKIE_NAME, token, {
+  res.cookie("savcel_session", token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
+    secure: true,
+    sameSite: "lax",
     path: "/",
-    maxAge: SESSION_DAYS * 24 * 60 * 60 * 1000
+    maxAge: 7 * 24 * 60 * 60 * 1000
   });
 }
 
