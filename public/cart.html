@@ -1,0 +1,233 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#eaf6ff">
+<title>Shopping Cart | SavCel Hub</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#f3f9ff;color:#17324d;font-family:Arial,sans-serif}
+header{background:#fff;padding:18px 5%;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #dcecf9}
+.logo{font-size:23px;font-weight:900;color:#1684d8}
+a{color:#1684d8;text-decoration:none;font-weight:bold}
+main{max-width:1000px;margin:35px auto;padding:0 18px}
+h1{font-size:29px}
+.muted{color:#71879c}
+.layout{display:grid;grid-template-columns:1.6fr 1fr;gap:20px}
+.card{background:#fff;border:1px solid #dcecf9;border-radius:16px;padding:20px;box-shadow:0 5px 18px #1684d80d}
+.item{display:flex;gap:15px;padding:15px 0;border-bottom:1px solid #e8f2fa}
+.item img{width:95px;height:95px;object-fit:cover;border-radius:10px;background:#e5f3ff}
+.details{flex:1;min-width:0}
+.details h3{margin:4px 0 8px;font-size:16px}
+.price{color:#087bc9;font-weight:bold}
+.quantity{display:flex;align-items:center;gap:12px;margin-top:10px}
+.quantity button,.remove{border:1px solid #cce4f6;background:#eef8ff;color:#087bc9;padding:7px 12px;border-radius:7px;cursor:pointer}
+.remove{margin-top:10px;color:#d33;background:#fff4f4;border-color:#f5cccc}
+.total-row{display:flex;justify-content:space-between;margin:15px 0}
+.total{font-size:23px;font-weight:900;color:#087bc9}
+.checkout{display:block;width:100%;padding:14px;border:0;border-radius:10px;background:#1684d8;color:#fff;font-size:16px;font-weight:bold;cursor:pointer;margin-top:20px}
+.continue{display:block;text-align:center;margin-top:15px}
+.empty{text-align:center;padding:35px 15px;color:#71879c}
+#message{color:#087bc9;margin:12px 0}
+@media(max-width:700px){.layout{grid-template-columns:1fr}main{margin:22px auto}.item img{width:80px;height:80px}}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">SavCel Hub</div>
+  <div><a href="/store">Continue Shopping</a></div>
+</header>
+
+<main>
+  <h1>Shopping Cart</h1>
+  <p class="muted">Review your items before checkout.</p>
+
+  <p id="message" aria-live="polite"></p>
+
+  <div class="layout">
+    <section class="card">
+      <h2>Your Items</h2>
+      <div id="cartItems">
+        <div class="empty">Loading your cart...</div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Order Summary</h2>
+      <div class="total-row">
+        <span>Items</span>
+        <strong id="itemCount">0</strong>
+      </div>
+      <div class="total-row">
+        <span>Subtotal</span>
+        <strong id="subtotal">GH₵0.00</strong>
+      </div>
+      <div class="total-row">
+        <span>Delivery</span>
+        <strong>Calculated at checkout</strong>
+      </div>
+      <hr style="border:0;border-top:1px solid #dcecf9">
+      <div class="total-row">
+        <span>Total</span>
+        <span class="total" id="total">GH₵0.00</span>
+      </div>
+      <button class="checkout" id="checkoutBtn">Proceed to Checkout</button>
+      <a class="continue" href="/store">Continue Shopping</a>
+    </section>
+  </div>
+</main>
+
+<script>
+let cartItems=[];
+
+function money(value){
+  return "GH₵"+Number(value).toFixed(2);
+}
+
+async function loadCart(){
+  try{
+    const response=await fetch("/api/cart",{
+      credentials:"same-origin",
+      cache:"no-store"
+    });
+
+    if(response.status===401){
+      window.location.replace("/auth");
+      return;
+    }
+
+    const data=await response.json();
+
+    if(!response.ok||!data.success){
+      throw new Error(data.message||"Cart loading failed.");
+    }
+
+    cartItems=data.items||[];
+    renderCart();
+
+  }catch(error){
+    document.getElementById("cartItems").innerHTML=
+      '<div class="empty">Unable to load your cart. Please refresh.</div>';
+  }
+}
+
+function renderCart(){
+  const holder=document.getElementById("cartItems");
+  holder.innerHTML="";
+
+  if(!cartItems.length){
+    holder.innerHTML=
+      '<div class="empty">Your shopping cart is empty.<br><br><a href="/store">Explore the Store</a></div>';
+  }
+
+  let total=0;
+  let count=0;
+
+  cartItems.forEach(item=>{
+    const quantity=Number(item.quantity);
+    const price=Number(item.price);
+    const subtotal=price*quantity;
+
+    total+=subtotal;
+    count+=quantity;
+
+    const row=document.createElement("div");
+    row.className="item";
+
+    const image=document.createElement("img");
+    image.src=item.image_url||"https://placehold.co/200x200/e5f3ff/1684d8?text=SavCel";
+    image.alt=item.name;
+    image.onerror=()=>{image.src="https://placehold.co/200x200/e5f3ff/1684d8?text=SavCel";};
+
+    const details=document.createElement("div");
+    details.className="details";
+
+    const title=document.createElement("h3");
+    title.textContent=item.name;
+
+    const priceText=document.createElement("div");
+    priceText.className="price";
+    priceText.textContent=money(price);
+
+    const quantityBox=document.createElement("div");
+    quantityBox.className="quantity";
+
+    const minus=document.createElement("button");
+    minus.textContent="-";
+    minus.addEventListener("click",()=>updateQuantity(item.cart_item_id,quantity-1));
+
+    const quantityText=document.createElement("strong");
+    quantityText.textContent=quantity;
+
+    const plus=document.createElement("button");
+    plus.textContent="+";
+    plus.addEventListener("click",()=>updateQuantity(item.cart_item_id,quantity+1));
+
+    const remove=document.createElement("button");
+    remove.className="remove";
+    remove.textContent="Remove";
+    remove.addEventListener("click",()=>removeItem(item.cart_item_id));
+
+    quantityBox.append(minus,quantityText,plus);
+    details.append(title,priceText,quantityBox,remove);
+    row.append(image,details);
+    holder.appendChild(row);
+  });
+
+  document.getElementById("itemCount").textContent=count;
+  document.getElementById("subtotal").textContent=money(total);
+  document.getElementById("total").textContent=money(total);
+
+  document.getElementById("checkoutBtn").disabled=!cartItems.length;
+}
+
+async function updateQuantity(id,quantity){
+  if(quantity<1){
+    return removeItem(id);
+  }
+
+  try{
+    const response=await fetch("/api/cart/items/"+id,{
+      method:"PATCH",
+      credentials:"same-origin",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({quantity})
+    });
+
+    const data=await response.json();
+    if(!response.ok)throw new Error(data.message);
+
+    await loadCart();
+  }catch(error){
+    document.getElementById("message").textContent=
+      error.message||"Unable to update quantity.";
+  }
+}
+
+async function removeItem(id){
+  try{
+    const response=await fetch("/api/cart/items/"+id,{
+      method:"DELETE",
+      credentials:"same-origin"
+    });
+
+    const data=await response.json();
+    if(!response.ok)throw new Error(data.message);
+
+    await loadCart();
+  }catch(error){
+    document.getElementById("message").textContent=
+      error.message||"Unable to remove item.";
+  }
+}
+
+document.getElementById("checkoutBtn").addEventListener("click",()=>{
+  window.location.href="/checkout";
+});
+
+loadCart();
+</script>
+</body>
+</html>
