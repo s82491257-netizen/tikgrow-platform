@@ -1,175 +1,187 @@
 
 const express = require("express");
 const { pool } = require("../db");
+const requireAuth = require("../middleware/auth");
 
 const router = express.Router();
 
 // GET ALL ACTIVE PRODUCTS
 router.get("/", async (req, res) => {
   try {
-    const page = Math.max(1, parseInt(req.query.page, 10) || 1);
-    const limit = Math.min(40, Math.max(1, parseInt(req.query.limit, 10) || 12));
-    const offset = (page - 1) * limit;
+    const result = await pool.query(`
+      SELECT
+        p.id,
+        p.name,
+        p.description,
+        p.image_url,
+        p.price,
+        p.reseller_price,
+        p.stock,
+        p.product_type,
+        c.name AS category
+      FROM products p
+      LEFT JOIN categories c ON c.id = p.category_id
+      WHERE p.is_active = TRUE
+      ORDER BY p.created_at DESC
+    `);
 
-    const search = String(req.query.search || "").trim().slice(0, 100);
-    const category = String(req.query.category || "").trim().slice(0, 80);
-
-    const conditions = ["p.is_active = TRUE"];
-    const values = [];
-
-    if (search) {
-      values.push(`%${search}%`);
-      conditions.push(
-        `(p.name ILIKE $${values.length} OR p.description ILIKE $${values.length})`
-      );
-    }
-
-    if (category) {
-      values.push(category);
-      conditions.push(`c.slug = $${values.length}`);
-    }
-
-    const where = conditions.join(" AND ");
-
-    const countResult = await pool.query(
-      `SELECT COUNT(*)::int AS total
-       FROM products p
-       LEFT JOIN categories c ON c.id = p.category_id
-       WHERE ${where}`,
-      values
-    );
-
-    const productsResult = await pool.query(
-      `SELECT
-         p.id,
-         p.name,
-         p.slug,
-         p.description,
-         p.price,
-         p.stock,
-         p.currency,
-         p.created_at,
-         c.name AS category_name,
-         c.slug AS category_slug,
-         (
-           SELECT pi.image_url
-           FROM product_images pi
-           WHERE pi.product_id = p.id
-           ORDER BY pi.id ASC
-           LIMIT 1
-         ) AS image_url
-       FROM products p
-       LEFT JOIN categories c ON c.id = p.category_id
-       WHERE ${where}
-       ORDER BY p.created_at DESC, p.id DESC
-       LIMIT $${values.length + 1}
-       OFFSET $${values.length + 2}`,
-      [...values, limit, offset]
-    );
-
-    return res.json({
+    res.json({
       success: true,
-      page,
-      limit,
-      total: countResult.rows[0].total,
-      totalPages: Math.ceil(countResult.rows[0].total / limit),
-      products: productsResult.rows
+      products: result.rows
     });
-
   } catch (error) {
     console.error("Products error:", error.message);
-
-    return res.status(500).json({
+    res.status(500).json({
       success: false,
       message: "Unable to load products."
     });
   }
 });
 
-// GET SINGLE PRODUCT
-router.get("/:id", async (req, res) => {
+// GET PRODUCT CATEGORIES
+router.get("/categories", async (req, res) => {
   try {
-    const productId = Number(req.params.id);
+    const result = await pool.query(`
+      SELECT id, name, description, image_url
+      FROM categories
+      WHERE is_active = TRUE
+      ORDER BY name ASC
+    `);
 
-    if (!Number.isSafeInteger(productId) || productId < 1) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid product ID."
-      });
-    }
-
-    const result = await pool.query(
-      `SELECT
-         p.id,
-         p.name,
-         p.slug,
-         p.description,
-         p.price,
-         p.stock,
-         p.currency,
-         c.name AS category_name,
-         c.slug AS category_slug
-       FROM products p
-       LEFT JOIN categories c ON c.id = p.category_id
-       WHERE p.id = $1 AND p.is_active = TRUE
-       LIMIT 1`,
-      [productId]
-    );
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: "Product not found."
-      });
-    }
-
-    const images = await pool.query(
-      `SELECT image_url, alt_text
-       FROM product_images
-       WHERE product_id = $1
-       ORDER BY id ASC`,
-      [productId]
-    );
-
-    return res.json({
+    res.json({
       success: true,
-      product: {
-        ...result.rows[0],
-        images: images.rows
-      }
+      categories: result.rows
     });
-
   } catch (error) {
-    console.error("Product detail error:", error.message);
-
-    return res.status(500).json({
+    console.error("Categories error:", error.message);
+    res.status(500).json({
       success: false,
-      message: "Unable to load product."
+      message: "Unable to load categories."
     });
   }
 });
 
-// GET PRODUCT CATEGORIES
-router.get("/categories/list", async (req, res) => {
+// ADD PRODUCT - ADMIN ONLY
+router.post("/", requireAuth, async (req, res) => {
   try {
-    const result = await pool.query(
-      `SELECT id, name, slug, description
-       FROM categories
-       WHERE is_active = TRUE
-       ORDER BY name ASC`
+    const userResult = await pool.query(
+      "SELECT role FROM users WHERE id = $1 AND is_active = TRUE",
+      [req.user.id]
     );
 
-    return res.json({
+    if (!userResult.rows.length || userResult.rows[0].role !== "admin") {
+      return res.status(403).json({
+        success: false,
+        message: "Admin access required."
+      });
+    }
+
+    const {
+      name,
+      description,
+      image_url,
+      price,
+      reseller_price,
+      stock,
+      category_id,
+      product_type
+    } = req.body;
+
+    const cleanName = String(name || "").trim();
+    const productPrice = Number(price);
+    const productStock = Number(stock ?? 0);
+    const resellerPrice =
+      reseller_price === "" || reseller_price == null
+        ? null
+        : Number(reseller_price);
+
+    if (
+      !cleanName ||
+      cleanName.length > 200 ||
+      !Number.isFinite(productPrice) ||
+      productPrice < 0 ||
+      !Number.isInteger(productStock) ||
+      productStock < 0
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Enter a valid product name, price and stock."
+      });
+    }
+
+    if (
+      resellerPrice !== null &&
+      (!Number.isFinite(resellerPrice) || resellerPrice < 0)
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Enter a valid reseller price."
+      });
+    }
+
+    const allowedTypes = ["physical", "digital", "service"];
+    const type = product_type || "physical";
+
+    if (!allowedTypes.includes(type)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid product type."
+      });
+    }
+
+    const image = image_url ? String(image_url).trim() : null;
+
+    if (image && (!/^https:\/\//i.test(image) || image.length > 2000)) {
+      return res.status(400).json({
+        success: false,
+        message: "Product image must use a valid HTTPS URL."
+      });
+    }
+
+    const categoryId =
+      category_id === "" || category_id == null
+        ? null
+        : Number(category_id);
+
+    if (
+      categoryId !== null &&
+      (!Number.isInteger(categoryId) || categoryId < 1)
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid category."
+      });
+    }
+
+    const result = await pool.query(
+      `INSERT INTO products
+       (category_id, name, description, image_url, price,
+        reseller_price, stock, product_type)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+       RETURNING *`,
+      [
+        categoryId,
+        cleanName,
+        description || null,
+        image,
+        productPrice,
+        resellerPrice,
+        productStock,
+        type
+      ]
+    );
+
+    res.status(201).json({
       success: true,
-      categories: result.rows
+      message: "Product added successfully.",
+      product: result.rows[0]
     });
 
   } catch (error) {
-    console.error("Categories error:", error.message);
-
-    return res.status(500).json({
+    console.error("Add product error:", error.message);
+    res.status(500).json({
       success: false,
-      message: "Unable to load categories."
+      message: "Unable to add product."
     });
   }
 });
