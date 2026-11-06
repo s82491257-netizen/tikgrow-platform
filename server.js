@@ -81,6 +81,13 @@ app.get("/auth", (req, res) => {
   res.sendFile(authPage);
 });
 
+// PROTECTED MY ACCOUNT PAGE
+app.get("/account", requireAuth, (req, res) => {
+  res.sendFile(
+    path.join(__dirname, "public", "account.html")
+  );
+});
+
 // PROTECT ALL CUSTOMER PAGES
 app.get("/", requireAuth, (req, res) => {
   const homepage = path.join(__dirname, "index.html");
