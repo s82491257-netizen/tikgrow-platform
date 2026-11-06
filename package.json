@@ -1,28 +1,22 @@
 
 
+
 {
   "name": "savcel-hub",
   "version": "2.0.0",
-  "description": "SavCel Hub - Premium Digital Marketplace and Reseller Platform",
+  "private": true,
+  "description": "SavCel Hub Premium Digital Marketplace",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "node --watch server.js"
+    "start": "node server.js"
   },
   "engines": {
-    "node": ">=20"
+    "node": "20.x"
   },
   "dependencies": {
-    "bcryptjs": "^2.4.3",
-    "cloudinary": "^2.5.1",
-    "connect-pg-simple": "^10.0.0",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "express-rate-limit": "^7.5.0",
-    "express-session": "^1.18.1",
-    "helmet": "^8.0.0",
-    "multer": "^1.4.5-lts.1",
-    "pg": "^8.13.1",
-    "uuid": "^11.0.5"
+    "helmet": "^8.0.0"
   }
 }
