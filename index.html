@@ -3,687 +3,308 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="theme-color" content="#eaf5ff">
-<title>TIKGROW - Social Growth Marketplace</title>
-
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TIKGROW Store</title>
 <style>
-:root{
-  --blue:#168bfa;
-  --blue2:#0875e8;
-  --light:#eaf5ff;
-  --ink:#10243e;
-  --muted:#718198;
-  --white:#fff;
-  --border:#e3edf7;
-  --shadow:0 12px 35px rgba(20,91,160,.09);
-}
 *{box-sizing:border-box}
-body{margin:0;font-family:Arial,Helvetica,sans-serif;color:var(--ink);background:#f7fbff}
-button,input{font:inherit}
-button{cursor:pointer}
-button:disabled{opacity:.6;cursor:not-allowed}
-header{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.96);border-bottom:1px solid var(--border);backdrop-filter:blur(12px)}
-.nav{max-width:1150px;margin:auto;padding:15px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px}
-.logo{font-size:25px;font-weight:900;letter-spacing:-1px;color:var(--blue)}
-.logo span{color:var(--ink)}
-.nav-right{display:flex;align-items:center;gap:9px}
-.btn{border:0;border-radius:11px;padding:12px 17px;font-weight:700;background:var(--blue);color:white}
-.btn:hover{background:var(--blue2)}
-.btn-outline{background:white;color:var(--blue);border:1px solid #b9dcff}
-.btn-outline:hover{background:var(--light)}
-.icon-btn{width:43px;height:43px;border-radius:12px;border:1px solid var(--border);background:white;color:var(--ink);font-size:21px}
-main{max-width:1150px;margin:auto;padding:25px 20px 60px}
-.hero{position:relative;overflow:hidden;padding:45px 35px;border-radius:25px;background:linear-gradient(120deg,#e9f5ff,#d5ebff 55%,#f5fbff);box-shadow:var(--shadow)}
-.hero:after{content:"";position:absolute;width:300px;height:300px;border-radius:50%;right:-70px;top:-110px;background:rgba(255,255,255,.55)}
-.hero-content{position:relative;z-index:1;max-width:650px}
-.eyebrow{display:inline-block;padding:8px 12px;border-radius:30px;color:#0875e8;background:white;font-size:12px;font-weight:800;letter-spacing:1px}
-.hero h1{font-size:clamp(32px,6vw,53px);line-height:1.08;margin:18px 0 12px}
-.hero h1 span{color:var(--blue)}
-.hero p{color:#58718d;line-height:1.7;max-width:540px}
-.hero-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:22px}
-.section-head{display:flex;align-items:end;justify-content:space-between;gap:12px;margin:36px 0 17px}
-.section-head h2{margin:0;font-size:24px}
-.section-head p{margin:7px 0 0;color:var(--muted);font-size:14px}
-.platform-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
-.platform{background:white;border:1px solid var(--border);border-radius:16px;padding:17px 10px;text-align:center}
-.platform .symbol{width:43px;height:43px;margin:0 auto 10px;border-radius:13px;background:var(--light);display:grid;place-items:center;font-size:21px;font-weight:900;color:var(--blue)}
-.platform strong{display:block;font-size:14px}
-.platform small{display:block;margin-top:6px;color:var(--muted);font-size:11px}
-.service-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
-.service{background:white;border:1px solid var(--border);border-radius:19px;padding:20px;box-shadow:0 5px 18px rgba(20,91,160,.035);transition:.2s}
-.service:hover{transform:translateY(-3px);box-shadow:var(--shadow)}
-.service-top{display:flex;align-items:center;justify-content:space-between}
-.service-icon{width:49px;height:49px;border-radius:15px;display:grid;place-items:center;background:var(--light);font-size:24px}
-.service-tag{background:#eff8ff;color:#0875e8;padding:6px 9px;border-radius:20px;font-size:11px;font-weight:800}
-.service h3{margin:17px 0 7px;font-size:19px}
-.service p{color:var(--muted);font-size:13px;line-height:1.5;min-height:38px}
-.price{font-size:18px;font-weight:900;margin:15px 0}
-.price small{font-size:11px;color:var(--muted);font-weight:500}
-.service .btn{width:100%}
-.info-strip{margin-top:28px;padding:20px;border-radius:17px;background:white;border:1px solid var(--border);display:flex;justify-content:space-between;gap:18px;flex-wrap:wrap}
-.info-item{display:flex;gap:10px;align-items:center;font-size:13px;color:#526981}
-.info-item b{color:var(--ink)}
-footer{border-top:1px solid var(--border);background:white;padding:25px 20px;text-align:center;color:var(--muted);font-size:13px}
-footer a{color:var(--blue);text-decoration:none;font-weight:700}
-.menu{display:none;position:absolute;right:18px;top:68px;width:220px;background:white;border:1px solid var(--border);box-shadow:var(--shadow);border-radius:15px;padding:8px}
-.menu.show{display:block}
-.menu button{width:100%;text-align:left;padding:12px;border:0;background:white;border-radius:9px;color:var(--ink);font-weight:700}
-.menu button:hover{background:var(--light)}
-.modal{display:none;position:fixed;inset:0;z-index:50;background:rgba(9,30,55,.55);padding:18px;align-items:center;justify-content:center;overflow-y:auto}
-.modal.show{display:flex}
-.modal-card{background:white;width:100%;max-width:470px;border-radius:21px;padding:24px;box-shadow:var(--shadow);max-height:92vh;overflow-y:auto}
-.modal-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
-.modal-head h2{margin:0;font-size:22px}
-.close{border:0;background:#f0f6fc;width:36px;height:36px;border-radius:10px;font-size:21px;color:var(--ink)}
-.field{margin-top:16px}
-.field label{display:block;font-size:13px;font-weight:800;margin-bottom:7px}
-.field input{width:100%;padding:14px;border:1px solid #dce8f4;border-radius:11px;outline:none;background:#fbfdff}
-.field input:focus{border-color:var(--blue);box-shadow:0 0 0 3px #168bfa18}
-.help{font-size:12px;color:var(--muted);line-height:1.5;margin-top:7px}
-.total-box{background:var(--light);border:1px solid #d7eaff;border-radius:13px;padding:15px;margin-top:17px;display:flex;justify-content:space-between;align-items:center}
-.total-box span{font-size:13px;color:#58718d}
-.total-box strong{font-size:23px;color:var(--blue)}
-.full{width:100%;margin-top:17px}
-.notice{font-size:13px;padding:12px;border-radius:10px;margin-top:14px;display:none}
-.notice.error{display:block;background:#fff0f0;color:#b32626}
-.notice.success{display:block;background:#eaf9ef;color:#18733b}
-.tabs{display:flex;background:#f0f6fc;padding:4px;border-radius:11px;margin-top:18px}
-.tabs button{flex:1;border:0;background:transparent;padding:11px;border-radius:8px;font-weight:800;color:#718198}
-.tabs button.active{background:white;color:var(--blue);box-shadow:0 2px 8px #0000000b}
-.order-row{padding:14px 0;border-bottom:1px solid var(--border);font-size:13px;line-height:1.7}
-.order-row strong{font-size:14px}
-.status{display:inline-block;padding:4px 8px;border-radius:20px;background:#eef7ff;color:#0875e8;font-size:11px;font-weight:800}
-.empty{text-align:center;padding:25px;color:var(--muted);font-size:14px}
-@media(max-width:760px){
-.service-grid{grid-template-columns:repeat(2,1fr)}
-.platform-grid{grid-template-columns:repeat(3,1fr)}
-.hero{padding:32px 23px}
-}
-@media(max-width:480px){
-main{padding:18px 14px 45px}
-.nav{padding:12px 14px}
-.logo{font-size:22px}
-.nav-right .btn{padding:10px 11px;font-size:12px}
-.service-grid{grid-template-columns:1fr 1fr;gap:10px}
-.service{padding:14px}
-.service h3{font-size:16px}
-.service p{font-size:12px;min-height:54px}
-.price{font-size:15px}
-.service .btn{padding:11px 7px;font-size:12px}
-.platform-grid{grid-template-columns:repeat(3,1fr)}
-}
+body{margin:0;font-family:Arial,sans-serif;background:#f4f9ff;color:#142b45}
+header{background:#fff;padding:16px 5%;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 12px #dceafa;position:sticky;top:0;z-index:5}
+.logo{font-size:25px;font-weight:900;color:#087bea}
+.logo span{color:#142b45}
+button{border:0;cursor:pointer;font-weight:bold;border-radius:9px;padding:12px 17px}
+.primary{background:#087bea;color:white}
+.secondary{background:#e7f3ff;color:#087bea}
+nav{display:flex;gap:8px}
+.hero{margin:20px 5%;padding:35px 25px;border-radius:20px;background:linear-gradient(120deg,#087bea,#70c5ff);color:white}
+.hero h1{font-size:32px;margin:0 0 10px}
+.hero p{line-height:1.5}
+.search{margin:20px 5%;display:flex;gap:10px}
+input,select{padding:14px;border:1px solid #d6e5f5;border-radius:9px;width:100%;font-size:15px;background:white}
+.search input{flex:1}
+.categories{display:flex;gap:10px;overflow:auto;padding:5px 5% 20px}
+.categories button{white-space:nowrap}
+main{padding:0 5% 50px}
+.section-title{display:flex;justify-content:space-between;align-items:center}
+.products{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:15px}
+.product{background:white;border-radius:14px;overflow:hidden;box-shadow:0 3px 12px #dceafa}
+.product img{width:100%;height:160px;object-fit:cover;background:#e7f3ff}
+.product-info{padding:12px}
+.product h3{font-size:15px;margin:0 0 8px}
+.price{color:#087bea;font-weight:900;margin:8px 0}
+.product button{width:100%}
+.empty{text-align:center;padding:35px;color:#71849b}
+footer{text-align:center;padding:25px;background:#fff;color:#71849b}
+.modal{display:none;position:fixed;inset:0;background:#0008;z-index:10;align-items:center;justify-content:center;padding:15px}
+.modal-box{background:white;border-radius:15px;padding:22px;width:100%;max-width:420px;max-height:90vh;overflow:auto}
+.modal-box input{margin:7px 0}
+.close{float:right;background:#edf5ff;color:#087bea}
+.cart-row{display:flex;justify-content:space-between;gap:10px;border-bottom:1px solid #eee;padding:12px 0}
+.notice{padding:12px;background:#e7f3ff;border-radius:9px;margin:10px 0;font-size:13px}
+@media(max-width:450px){.hero h1{font-size:25px}header{padding:13px 4%}.logo{font-size:21px}}
 </style>
 </head>
-
 <body>
+
 <header>
-<div class="nav">
-  <div class="logo">TIK<span>GROW</span></div>
-  <div class="nav-right">
-    <button class="btn btn-outline" id="loginNav" onclick="openAuth('login')">Login</button>
-    <button class="btn" id="signupNav" onclick="openAuth('register')">Sign Up</button>
-    <button class="icon-btn" onclick="toggleMenu()" aria-label="Menu">☰</button>
-  </div>
-  <div class="menu" id="menu">
-    <button onclick="goHome()">Home</button>
-    <button onclick="showTrack()">Track an Order</button>
-    <button onclick="openHistory()">My Order History</button>
-    <button onclick="openAuth('login')">Login / Sign Up</button>
-    <button onclick="contactSupport()">Contact Support</button>
-    <button onclick="logout()" id="logoutMenu" style="display:none">Logout</button>
-  </div>
-</div>
+ <div class="logo">TIK<span>GROW</span></div>
+ <nav>
+  <button class="secondary" onclick="showCart()">Cart (<span id="cartCount">0</span>)</button>
+  <button class="primary" onclick="showAuth()">Account</button>
+ </nav>
 </header>
 
-<main>
-<section class="hero" id="home">
-  <div class="hero-content">
-    <span class="eyebrow">YOUR SOCIAL GROWTH MARKETPLACE</span>
-    <h1>Grow Your Socials.<br><span>Make Your Mark.</span></h1>
-    <p>Choose a promotion service, enter your TikTok link and quantity, and continue to secure checkout.</p>
-    <div class="hero-actions">
-      <button class="btn" onclick="document.getElementById('services').scrollIntoView({behavior:'smooth'})">Explore Services</button>
-      <button class="btn btn-outline" onclick="openHistory()">My Orders</button>
-    </div>
-  </div>
+<section class="hero">
+ <h1>Welcome to TIKGROW Store</h1>
+ <p>Shop your favourite goods at great prices. Easy ordering and secure online payment.</p>
+ <button style="background:white;color:#087bea" onclick="document.getElementById('shop').scrollIntoView({behavior:'smooth'})">Shop Now</button>
 </section>
 
-<div class="section-head">
-  <div><h2>Choose Your Platform</h2><p>More platforms are coming soon.</p></div>
+<div class="search">
+ <input id="search" placeholder="Search products..." oninput="loadProducts()">
 </div>
 
-<section class="platform-grid">
-  <div class="platform"><div class="symbol">♪</div><strong>TikTok</strong><small>Available now</small></div>
-  <div class="platform"><div class="symbol">◎</div><strong>Instagram</strong><small>Coming soon</small></div>
-  <div class="platform"><div class="symbol">▶</div><strong>YouTube</strong><small>Coming soon</small></div>
-  <div class="platform"><div class="symbol">f</div><strong>Facebook</strong><small>Coming soon</small></div>
-  <div class="platform"><div class="symbol">𝕏</div><strong>X</strong><small>Coming soon</small></div>
-</section>
-
-<div class="section-head" id="services">
-  <div><h2>TikTok Promotion Services</h2><p>Choose a service to start your order.</p></div>
+<div class="categories">
+ <button class="primary" onclick="setCategory('All')">All Products</button>
+ <button class="secondary" onclick="setCategory('Electronics')">Electronics</button>
+ <button class="secondary" onclick="setCategory('Fashion')">Fashion</button>
+ <button class="secondary" onclick="setCategory('Shoes')">Shoes</button>
+ <button class="secondary" onclick="setCategory('Accessories')">Accessories</button>
+ <button class="secondary" onclick="setCategory('Other')">Other</button>
 </div>
 
-<section class="service-grid">
-  <article class="service">
-    <div class="service-top"><div class="service-icon">♥</div><span class="service-tag">POPULAR</span></div>
-    <h3>TikTok Likes</h3>
-    <p>Promotion for engagement on your TikTok content.</p>
-    <div class="price">GH₵25 <small>/ 1,000</small></div>
-    <button class="btn" onclick="openOrder('TikTok Likes')">Buy Likes</button>
-  </article>
-
-  <article class="service">
-    <div class="service-top"><div class="service-icon">💬</div><span class="service-tag">COMMENTS</span></div>
-    <h3>Comments</h3>
-    <p>Minimum order 4,000 comments.</p>
-    <div class="price">GH₵250 <small>/ 1,000</small></div>
-    <button class="btn" onclick="openOrder('Comments')">Buy Comments</button>
-  </article>
-
-  <article class="service">
-    <div class="service-top"><div class="service-icon">♟</div><span class="service-tag">GROWTH</span></div>
-    <h3>Followers</h3>
-    <p>Promotion campaigns to help your profile reach people.</p>
-    <div class="price">GH₵100 <small>/ 1,000</small></div>
-    <button class="btn" onclick="openOrder('Followers')">Buy Followers</button>
-  </article>
-
-  <article class="service">
-    <div class="service-top"><div class="service-icon">▶</div><span class="service-tag">VIEWS</span></div>
-    <h3>Video Views</h3>
-    <p>Promote your video and increase its reach.</p>
-    <div class="price">GH₵10 <small>/ 1,000</small></div>
-    <button class="btn" onclick="openOrder('Video Views')">Buy Views</button>
-  </article>
-
-  <article class="service">
-    <div class="service-top"><div class="service-icon">🔖</div><span class="service-tag">SAVES</span></div>
-    <h3>Saves</h3>
-    <p>TikTok saves for your content. This service is saves, not shares.</p>
-    <div class="price">GH₵35 <small>/ 1,000</small></div>
-    <button class="btn" onclick="openOrder('Saves')">Buy Saves</button>
-  </article>
-
-  <article class="service">
-    <div class="service-top"><div class="service-icon">LIVE</div><span class="service-tag">90 MINUTES</span></div>
-    <h3>LIVE Viewers</h3>
-    <p>Promotion with live-stream viewers for 90 minutes.</p>
-    <div class="price">GH₵150 <small>/ 1,000</small></div>
-    <button class="btn" onclick="openOrder('LIVE Promotion')">Buy LIVE Viewers</button>
-  </article>
-</section>
-
-<section class="info-strip">
-  <div class="info-item">🔒 <span><b>Secure checkout</b><br>Paystack payment</span></div>
-  <div class="info-item">📱 <span><b>Mobile friendly</b><br>Designed for your phone</span></div>
-  <div class="info-item">💬 <span><b>Need help?</b><br>WhatsApp support</span></div>
-</section>
+<main id="shop">
+ <div class="section-title">
+  <h2>Our Products</h2>
+  <span id="productTotal"></span>
+ </div>
+ <div id="products" class="products">
+  <div class="empty">Loading products...</div>
+ </div>
 </main>
 
-<footer>
-  <b>TIKGROW</b> · Social Growth Marketplace<br><br>
-  Support: <a href="https://wa.me/233257980924" target="_blank" rel="noopener">WhatsApp 0257980924</a>
-</footer>
+<footer>© 2026 TIKGROW Store. All rights reserved.</footer>
 
-<!-- ORDER MODAL -->
-<div class="modal" id="orderModal">
-<div class="modal-card">
-  <div class="modal-head">
-    <h2 id="orderTitle">Place Your Order</h2>
-    <button class="close" onclick="closeModal('orderModal')">×</button>
-  </div>
-  <p class="help">Enter your contact number, TikTok link and quantity below.</p>
-
-  <div class="field">
-    <label>Phone Number</label>
-    <input id="orderPhone" type="tel" placeholder="e.g. 0257980924">
-  </div>
-  <div class="field">
-    <label>TikTok Video or Profile Link</label>
-    <input id="orderLink" type="url" placeholder="https://www.tiktok.com/@username">
-  </div>
-  <div class="field">
-    <label>Quantity</label>
-    <input id="orderQuantity" type="number" min="1" max="1000000" value="1000" oninput="calculateTotal()">
-    <div class="help" id="quantityHelp">Select your order quantity.</div>
-  </div>
-
-  <div class="total-box">
-    <span>Estimated total</span>
-    <strong id="orderTotal">GH₵25.00</strong>
-  </div>
-  <div class="help">Final order pricing is confirmed by the server before payment.</div>
-  <button class="btn full" id="continuePay" onclick="submitOrder()">Continue to Payment</button>
-  <div id="orderMessage" class="notice"></div>
-</div>
-</div>
-
-<!-- AUTH MODAL -->
 <div class="modal" id="authModal">
-<div class="modal-card">
-  <div class="modal-head">
-    <h2 id="authTitle">Welcome to TIKGROW</h2>
-    <button class="close" onclick="closeModal('authModal')">×</button>
-  </div>
-  <div class="tabs">
-    <button id="loginTab" class="active" onclick="setAuthMode('login')">Login</button>
-    <button id="registerTab" onclick="setAuthMode('register')">Sign Up</button>
-  </div>
-  <div class="field">
-    <label>Phone Number</label>
-    <input id="authPhone" type="tel" placeholder="Enter your phone number">
-  </div>
-  <div class="field">
-    <label>Password</label>
-    <input id="authPassword" type="password" placeholder="Enter your password">
-  </div>
-  <button class="btn full" id="authSubmit" onclick="submitAuth()">Login</button>
-  <div id="authMessage" class="notice"></div>
-  <p class="help">Use your phone number and password to access your account. Phone numbers are not SMS-verified.</p>
-</div>
+ <div class="modal-box">
+  <button class="close" onclick="hideModal('authModal')">Close</button>
+  <h2 id="authTitle">Customer Login</h2>
+  <input id="authName" placeholder="Full name" style="display:none">
+  <input id="authEmail" type="email" placeholder="Email address">
+  <input id="authPassword" type="password" placeholder="Password">
+  <button class="primary" style="width:100%;margin-top:10px" onclick="submitAuth()">Continue</button>
+  <p id="authMessage"></p>
+  <p><a href="#" onclick="toggleAuth();return false">Switch Login / Sign Up</a></p>
+ </div>
 </div>
 
-<!-- TRACK ORDER MODAL -->
-<div class="modal" id="trackModal">
-<div class="modal-card">
-  <div class="modal-head">
-    <h2>Track an Order</h2>
-    <button class="close" onclick="closeModal('trackModal')">×</button>
-  </div>
-  <div class="field">
-    <label>Order ID</label>
-    <input id="trackCode" placeholder="Enter your order ID">
-  </div>
-  <button class="btn full" onclick="trackOrder()">Find Order</button>
-  <div id="trackResult"></div>
-</div>
+<div class="modal" id="cartModal">
+ <div class="modal-box">
+  <button class="close" onclick="hideModal('cartModal')">Close</button>
+  <h2>Your Shopping Cart</h2>
+  <div id="cartItems"></div>
+  <h3 id="cartTotal">Total: GH₵0.00</h3>
+  <button class="primary" style="width:100%" onclick="checkout()">Proceed to Checkout</button>
+  <p id="cartMessage"></p>
+ </div>
 </div>
 
-<!-- ORDER HISTORY MODAL -->
-<div class="modal" id="historyModal">
-<div class="modal-card">
-  <div class="modal-head">
-    <h2>My Orders</h2>
-    <button class="close" onclick="closeModal('historyModal')">×</button>
-  </div>
-  <div id="historyContent"><div class="empty">Loading your orders...</div></div>
-</div>
+<div class="modal" id="checkoutModal">
+ <div class="modal-box">
+  <button class="close" onclick="hideModal('checkoutModal')">Close</button>
+  <h2>Delivery Information</h2>
+  <input id="deliveryPhone" placeholder="Phone number">
+  <input id="deliveryAddress" placeholder="Full delivery address">
+  <div class="notice">You will be redirected to Paystack to pay securely using Mobile Money or Visa.</div>
+  <button class="primary" style="width:100%" onclick="placeOrder()">Continue to Payment</button>
+  <p id="checkoutMessage"></p>
+ </div>
 </div>
 
 <script>
-const API = "";
+let products=[];
+let cart=[];
+let category='All';
+let token=localStorage.getItem('tikgrow_token')||'';
+let signup=false;
 
-const prices = {
-  "TikTok Likes":25,
-  "Comments":250,
-  "Followers":100,
-  "Video Views":10,
-  "Saves":35,
-  "LIVE Promotion":150
-};
+function money(value){
+ return 'GH₵'+Number(value||0).toFixed(2);
+}
 
-const minimums = {
-  "TikTok Likes":10,
-  "Comments":4000,
-  "Followers":10,
-  "Video Views":100,
-  "Saves":100,
-  "LIVE Promotion":50
-};
-
-let selectedService = "";
-let selectedRate = 0;
-let currentUser = null;
-let authMode = "login";
-
-async function api(path, options={}) {
-  const response = await fetch(API + path, {
-    credentials:"same-origin",
-    ...options,
-    headers:{
-      ...(options.headers || {}),
-      "Content-Type":"application/json"
-    }
+async function loadProducts(){
+ const box=document.getElementById('products');
+ const search=document.getElementById('search').value.toLowerCase();
+ try{
+  const response=await fetch('/api/products');
+  const data=await response.json();
+  products=Array.isArray(data)?data:(data.products||[]);
+  const filtered=products.filter(p=>{
+   const matchesSearch=(p.name||'').toLowerCase().includes(search)||
+   (p.description||'').toLowerCase().includes(search);
+   const matchesCategory=category==='All'||p.category===category;
+   return matchesSearch&&matchesCategory&&p.active!==false;
   });
-
-  let data = {};
-  try { data = await response.json(); } catch(e) {}
-
-  if (!response.ok) {
-    throw new Error(data.error || data.message || "Something went wrong. Please try again.");
+  document.getElementById('productTotal').textContent=filtered.length+' products';
+  if(!filtered.length){
+   box.innerHTML='<div class="empty">No products available yet. Please check again later.</div>';
+   return;
   }
-  return data;
+  box.innerHTML=filtered.map(p=>`
+   <div class="product">
+    <img src="${escapeHTML(p.image_url||'')}" alt="${escapeHTML(p.name||'Product')}" onerror="this.style.display='none'">
+    <div class="product-info">
+     <h3>${escapeHTML(p.name||'Product')}</h3>
+     <div class="price">${money(p.price)}</div>
+     <button class="primary" onclick="addToCart('${p.id}')">Add to Cart</button>
+    </div>
+   </div>`).join('');
+ }catch(error){
+  box.innerHTML='<div class="empty">Could not load products. Please refresh the page.</div>';
+ }
 }
 
-function showMessage(id, message, type="error") {
-  const el = document.getElementById(id);
-  el.textContent = message;
-  el.className = "notice " + type;
+function escapeHTML(value){
+ return String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 
-function clearMessage(id) {
-  const el = document.getElementById(id);
-  el.textContent = "";
-  el.className = "notice";
+function setCategory(value){
+ category=value;
+ loadProducts();
 }
 
-function toggleMenu() {
-  document.getElementById("menu").classList.toggle("show");
+function addToCart(id){
+ const product=products.find(p=>String(p.id)===String(id));
+ if(!product)return;
+ const existing=cart.find(item=>String(item.product_id)===String(id));
+ if(existing)existing.quantity++;
+ else cart.push({product_id:id,quantity:1});
+ updateCart();
+ alert('Product added to cart!');
 }
 
-function closeMenu() {
-  document.getElementById("menu").classList.remove("show");
+function updateCart(){
+ document.getElementById('cartCount').textContent=cart.reduce((sum,item)=>sum+item.quantity,0);
 }
 
-function goHome() {
-  closeMenu();
-  window.scrollTo({top:0,behavior:"smooth"});
+function showCart(){
+ renderCart();
+ document.getElementById('cartModal').style.display='flex';
 }
 
-function contactSupport() {
-  closeMenu();
-  window.open("https://wa.me/233257980924","_blank","noopener");
+function renderCart(){
+ const box=document.getElementById('cartItems');
+ let total=0;
+ if(!cart.length){
+  box.innerHTML='<div class="empty">Your cart is empty.</div>';
+ }else{
+  box.innerHTML=cart.map(item=>{
+   const p=products.find(x=>String(x.id)===String(item.product_id));
+   if(!p)return '';
+   total+=Number(p.price)*item.quantity;
+   return `<div class="cart-row">
+    <div>${escapeHTML(p.name)}<br>${money(p.price)} × ${item.quantity}</div>
+    <button class="secondary" onclick="removeCart('${item.product_id}')">Remove</button>
+   </div>`;
+  }).join('');
+ }
+ document.getElementById('cartTotal').textContent='Total: '+money(total);
 }
 
-function openModal(id) {
-  document.getElementById(id).classList.add("show");
+function removeCart(id){
+ cart=cart.filter(item=>String(item.product_id)!==String(id));
+ updateCart();
+ renderCart();
 }
 
-function closeModal(id) {
-  document.getElementById(id).classList.remove("show");
+function showAuth(){
+ document.getElementById('authModal').style.display='flex';
 }
 
-function openOrder(service) {
-  selectedService = service;
-  selectedRate = prices[service];
-
-  document.getElementById("orderTitle").textContent = service;
-  document.getElementById("orderQuantity").value = minimums[service];
-  document.getElementById("orderQuantity").min = minimums[service];
-  document.getElementById("orderPhone").value = currentUser?.phone || "";
-  document.getElementById("orderLink").value = "";
-  document.getElementById("continuePay").disabled = false;
-  document.getElementById("continuePay").textContent = "Continue to Payment";
-
-  document.getElementById("quantityHelp").textContent =
-    "Minimum quantity: " + minimums[service].toLocaleString() +
-    ". Maximum quantity: 1,000,000.";
-
-  clearMessage("orderMessage");
-  calculateTotal();
-  openModal("orderModal");
+function hideModal(id){
+ document.getElementById(id).style.display='none';
 }
 
-function calculateTotal() {
-  const quantity = Number(document.getElementById("orderQuantity").value || 0);
-  const total = quantity > 0 ? quantity * selectedRate / 1000 : 0;
-
-  document.getElementById("orderTotal").textContent =
-    "GH₵" + total.toFixed(2);
+function toggleAuth(){
+ signup=!signup;
+ document.getElementById('authTitle').textContent=signup?'Create Account':'Customer Login';
+ document.getElementById('authName').style.display=signup?'block':'none';
+ document.getElementById('authMessage').textContent='';
 }
 
-async function submitOrder() {
-  const phone = document.getElementById("orderPhone").value.trim();
-  const link = document.getElementById("orderLink").value.trim();
-  const quantity = Number(document.getElementById("orderQuantity").value);
-  const button = document.getElementById("continuePay");
-
-  clearMessage("orderMessage");
-
-  if (!phone) return showMessage("orderMessage","Enter your phone number.");
-
-  if (!link || !/^https:\/\//i.test(link)) {
-    return showMessage("orderMessage","Enter a valid TikTok link beginning with https://");
-  }
-
-  if (!Number.isInteger(quantity) || quantity < minimums[selectedService] || quantity > 1000000) {
-    return showMessage(
-      "orderMessage",
-      "Minimum quantity for " + selectedService + " is " +
-      minimums[selectedService].toLocaleString() + "."
-    );
-  }
-
-  const estimatedTotal = quantity * selectedRate / 1000;
-
-  if (estimatedTotal < 1) {
-    return showMessage("orderMessage","The minimum Paystack payment is GH₵1. Increase your quantity to continue.");
-  }
-
-  button.disabled = true;
-  button.textContent = "Creating order...";
-
-  try {
-    const result = await api("/api/orders",{
-      method:"POST",
-      body:JSON.stringify({
-        contact:phone,
-        link:link,
-        service:selectedService,
-        quantity:quantity
-      })
-    });
-
-    const code = result.order_code || result.code;
-
-    if (!code) {
-      throw new Error("Order created, but no order ID was returned. Contact support before trying again.");
-    }
-
-    button.textContent = "Opening payment...";
-
-    const payment = await api("/api/orders/" + encodeURIComponent(code) + "/pay",{
-      method:"POST",
-      body:JSON.stringify({})
-    });
-
-    const paymentUrl = payment.authorization_url;
-
-    if (!paymentUrl) {
-      throw new Error("Payment link was not returned. Your order ID is " + code + ". Contact support before placing another order.");
-    }
-
-    window.location.href = paymentUrl;
-
-  } catch(error) {
-    showMessage("orderMessage",error.message || "Unable to create your order.");
-    button.disabled = false;
-    button.textContent = "Continue to Payment";
-  }
+async function submitAuth(){
+ const message=document.getElementById('authMessage');
+ const payload={
+  email:document.getElementById('authEmail').value,
+  password:document.getElementById('authPassword').value
+ };
+ if(signup)payload.name=document.getElementById('authName').value;
+ message.textContent='Please wait...';
+ try{
+  const response=await fetch('/api/auth/'+(signup?'register':'login'),{
+   method:'POST',
+   headers:{'Content-Type':'application/json'},
+   body:JSON.stringify(payload)
+  });
+  const data=await response.json();
+  if(!response.ok)throw new Error(data.error||'Unable to continue');
+  token=data.token;
+  if(!token)throw new Error('Login token was not returned');
+  localStorage.setItem('tikgrow_token',token);
+  message.textContent='Account ready!';
+  setTimeout(()=>hideModal('authModal'),700);
+ }catch(error){
+  message.textContent=error.message;
+ }
 }
 
-function openAuth(mode="login") {
-  closeMenu();
-  setAuthMode(mode);
-  clearMessage("authMessage");
-  openModal("authModal");
+function checkout(){
+ if(!cart.length){
+  document.getElementById('cartMessage').textContent='Add products first.';
+  return;
+ }
+ if(!token){
+  hideModal('cartModal');
+  showAuth();
+  document.getElementById('authMessage').textContent='Please log in before checkout.';
+  return;
+ }
+ hideModal('cartModal');
+ document.getElementById('checkoutModal').style.display='flex';
 }
 
-function setAuthMode(mode) {
-  authMode = mode;
-  document.getElementById("loginTab").classList.toggle("active",mode==="login");
-  document.getElementById("registerTab").classList.toggle("active",mode==="register");
-  document.getElementById("authTitle").textContent =
-    mode==="login" ? "Welcome Back" : "Create Your Account";
-  document.getElementById("authSubmit").textContent =
-    mode==="login" ? "Login" : "Create Account";
-  clearMessage("authMessage");
+async function placeOrder(){
+ const message=document.getElementById('checkoutMessage');
+ const phone=document.getElementById('deliveryPhone').value.trim();
+ const address=document.getElementById('deliveryAddress').value.trim();
+ if(!phone||!address){
+  message.textContent='Enter your phone number and delivery address.';
+  return;
+ }
+ message.textContent='Preparing secure payment...';
+ try{
+  const response=await fetch('/api/checkout',{
+   method:'POST',
+   headers:{
+    'Content-Type':'application/json',
+    'Authorization':'Bearer '+token
+   },
+   body:JSON.stringify({
+    items:cart,
+    phone:phone,
+    delivery_address:address
+   })
+  });
+  const data=await response.json();
+  if(!response.ok)throw new Error(data.error||'Checkout failed');
+  if(!data.authorization_url)throw new Error('Payment link was not returned');
+  window.location.href=data.authorization_url;
+ }catch(error){
+  message.textContent=error.message;
+ }
 }
 
-async function submitAuth() {
-  const phone = document.getElementById("authPhone").value.trim();
-  const password = document.getElementById("authPassword").value;
-  const button = document.getElementById("authSubmit");
-
-  clearMessage("authMessage");
-
-  if (!phone || !password) {
-    return showMessage("authMessage","Enter your phone number and password.");
-  }
-
-  button.disabled = true;
-  button.textContent = "Please wait...";
-
-  try {
-    const endpoint = authMode==="login"
-      ? "/api/auth/login"
-      : "/api/auth/register";
-
-    const result = await api(endpoint,{
-      method:"POST",
-      body:JSON.stringify({phone,password})
-    });
-
-    currentUser = result.user || null;
-    updateAccountUI();
-    closeModal("authModal");
-
-    alert(authMode==="login" ? "Login successful." : "Account created successfully.");
-
-  } catch(error) {
-    showMessage("authMessage",error.message || "Unable to complete account request.");
-  } finally {
-    button.disabled = false;
-    button.textContent = authMode==="login" ? "Login" : "Create Account";
-  }
-}
-
-function updateAccountUI() {
-  const loggedIn = !!currentUser;
-
-  document.getElementById("loginNav").textContent =
-    loggedIn ? "My Account" : "Login";
-
-  document.getElementById("loginNav").onclick =
-    loggedIn ? openHistory : () => openAuth("login");
-
-  document.getElementById("signupNav").style.display =
-    loggedIn ? "none" : "inline-block";
-
-  document.getElementById("logoutMenu").style.display =
-    loggedIn ? "block" : "none";
-}
-
-async function checkSession() {
-  try {
-    const result = await api("/api/auth/me");
-    currentUser = result.authenticated ? result.user : null;
-  } catch(e) {
-    currentUser = null;
-  }
-
-  updateAccountUI();
-}
-
-async function logout() {
-  closeMenu();
-
-  try {
-    await api("/api/auth/logout",{
-      method:"POST",
-      body:JSON.stringify({})
-    });
-  } catch(e) {}
-
-  currentUser = null;
-  updateAccountUI();
-  alert("You have been logged out.");
-}
-
-function showTrack() {
-  closeMenu();
-  document.getElementById("trackCode").value = "";
-  document.getElementById("trackResult").innerHTML = "";
-  openModal("trackModal");
-}
-
-async function trackOrder() {
-  const code = document.getElementById("trackCode").value.trim();
-  const resultBox = document.getElementById("trackResult");
-
-  if (!code) {
-    resultBox.innerHTML = '<div class="notice error">Enter your order ID.</div>';
-    return;
-  }
-
-  resultBox.innerHTML = '<div class="empty">Checking order...</div>';
-
-  try {
-    const order = await api("/api/orders/" + encodeURIComponent(code));
-
-    resultBox.innerHTML = `
-      <div class="order-row">
-        <strong>${safeText(order.service || "Order")}</strong><br>
-        Quantity: ${safeText(order.quantity ?? "—")}<br>
-        Order status: <span class="status">${safeText(order.status || "Processing")}</span><br>
-        Payment: ${safeText(order.payment_status || "Not available")}
-      </div>`;
-  } catch(error) {
-    resultBox.innerHTML =
-      '<div class="notice error">' + safeText(error.message) + '</div>';
-  }
-}
-
-async function openHistory() {
-  closeMenu();
-  openModal("historyModal");
-
-  const box = document.getElementById("historyContent");
-
-  if (!currentUser) {
-    box.innerHTML = '<div class="empty">Please login to view your orders.</div>';
-    return;
-  }
-
-  box.innerHTML = '<div class="empty">Loading your orders...</div>';
-
-  try {
-    const data = await api("/api/customer/orders");
-    const orders = Array.isArray(data) ? data : (data.orders || []);
-
-    if (!orders.length) {
-      box.innerHTML = '<div class="empty">You have no orders yet.</div>';
-      return;
-    }
-
-    box.innerHTML = orders.map(order => `
-      <div class="order-row">
-        <strong>${safeText(order.service || "Order")}</strong><br>
-        Order ID: ${safeText(order.order_code || "—")}<br>
-        Quantity: ${safeText(order.quantity ?? "—")}<br>
-        Amount: GH₵${safeText(order.price_ghs ?? "—")}<br>
-        Payment: ${safeText(order.payment_status || "Not paid")}<br>
-        Status: <span class="status">${safeText(order.status || "Pending")}</span>
-      </div>
-    `).join("");
-
-  } catch(error) {
-    box.innerHTML = '<div class="notice error">' + safeText(error.message) + '</div>';
-  }
-}
-
-function safeText(value) {
-  return String(value).replace(/[&<>"']/g, char => ({
-    "&":"&amp;",
-    "<":"&lt;",
-    ">":"&gt;",
-    '"':"&quot;",
-    "'":"&#039;"
-  })[char]);
-}
-
-document.addEventListener("click",function(event){
-  const menu = document.getElementById("menu");
-
-  if (!menu.contains(event.target) &&
-      !event.target.closest(".icon-btn")) {
-    menu.classList.remove("show");
-  }
-});
-
-checkSession();
+updateCart();
+loadProducts();
 </script>
 </body>
 </html>
