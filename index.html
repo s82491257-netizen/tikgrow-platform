@@ -1,310 +1,229 @@
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>TIKGROW Store</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#100b20">
+<title>SavCel Hub | Premium Digital Marketplace</title>
+<meta name="description" content="SavCel Hub — Premium shopping, digital services, data bundles and reseller opportunities.">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet">
+
 <style>
+:root{
+--purple:#7545e8;
+--blue:#368cff;
+--dark:#100b20;
+--muted:#777486;
+--white:#fff;
+--light:#f7f6fb;
+}
 *{box-sizing:border-box}
-body{margin:0;font-family:Arial,sans-serif;background:#f4f9ff;color:#142b45}
-header{background:#fff;padding:16px 5%;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 12px #dceafa;position:sticky;top:0;z-index:5}
-.logo{font-size:25px;font-weight:900;color:#087bea}
-.logo span{color:#142b45}
-button{border:0;cursor:pointer;font-weight:bold;border-radius:9px;padding:12px 17px}
-.primary{background:#087bea;color:white}
-.secondary{background:#e7f3ff;color:#087bea}
-nav{display:flex;gap:8px}
-.hero{margin:20px 5%;padding:35px 25px;border-radius:20px;background:linear-gradient(120deg,#087bea,#70c5ff);color:white}
-.hero h1{font-size:32px;margin:0 0 10px}
-.hero p{line-height:1.5}
-.search{margin:20px 5%;display:flex;gap:10px}
-input,select{padding:14px;border:1px solid #d6e5f5;border-radius:9px;width:100%;font-size:15px;background:white}
-.search input{flex:1}
-.categories{display:flex;gap:10px;overflow:auto;padding:5px 5% 20px}
-.categories button{white-space:nowrap}
-main{padding:0 5% 50px}
-.section-title{display:flex;justify-content:space-between;align-items:center}
-.products{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:15px}
-.product{background:white;border-radius:14px;overflow:hidden;box-shadow:0 3px 12px #dceafa}
-.product img{width:100%;height:160px;object-fit:cover;background:#e7f3ff}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--light);color:#171329;font-family:'DM Sans',Arial,sans-serif}
+a{text-decoration:none;color:inherit}
+button,input{font:inherit}
+.topbar{background:#090613;color:#ddd;padding:10px 5%;text-align:center;font-size:12px;letter-spacing:1px}
+header{background:#100b20;color:white;padding:19px 5%;display:flex;align-items:center;justify-content:space-between;gap:25px;position:sticky;top:0;z-index:10;border-bottom:1px solid #ffffff16}
+.brand{font-size:25px;font-weight:800;letter-spacing:-1px}
+.brand span{color:#a78bfa}
+.nav{display:flex;gap:28px;align-items:center;font-size:13px;color:#d5d0e2}
+.nav a:hover{color:#a78bfa}
+.actions{display:flex;align-items:center;gap:15px}
+.search{border:1px solid #ffffff30;border-radius:30px;padding:10px 15px;background:#ffffff0c;color:white;width:165px;outline:none}
+.login{border:1px solid #a78bfa;padding:10px 19px;border-radius:25px;color:white;font-size:13px}
+.hero{background:radial-gradient(ellipse at 75% 35%,#54329b 0%,#21133f 36%,#100b20 75%);color:white;padding:85px 7% 95px;min-height:490px;display:flex;align-items:center;position:relative;overflow:hidden}
+.hero:after{content:"";position:absolute;width:380px;height:380px;border:1px solid #ffffff20;border-radius:50%;right:-80px;top:40px;box-shadow:0 0 0 50px #ffffff06,0 0 0 100px #ffffff04}
+.hero-content{max-width:680px;position:relative;z-index:1}
+.eyebrow{color:#bca5ff;font-size:12px;letter-spacing:3px;text-transform:uppercase;font-weight:700}
+.hero h1{font-family:'Playfair Display',serif;font-size:clamp(43px,7vw,76px);line-height:1.08;margin:20px 0}
+.hero h1 span{color:#b59aff}
+.hero p{color:#d0c9df;line-height:1.9;font-size:15px;max-width:510px}
+.primary{display:inline-block;background:linear-gradient(100deg,#7545e8,#368cff);color:white;padding:15px 27px;border-radius:30px;margin-top:20px;font-weight:700;font-size:13px;box-shadow:0 8px 25px #7545e850}
+.secondary{display:inline-block;border:1px solid #ffffff60;padding:14px 25px;border-radius:30px;margin:20px 0 0 10px;font-size:13px}
+.trust{display:flex;justify-content:space-around;flex-wrap:wrap;gap:15px;background:white;padding:24px 5%;border-bottom:1px solid #eee}
+.trust div{font-size:12px;font-weight:700;color:#403653}
+.trust span{color:#7545e8;margin-right:7px}
+.section{padding:65px 5%;max-width:1450px;margin:auto}
+.section-head{display:flex;align-items:end;justify-content:space-between;gap:15px;margin-bottom:28px}
+.kicker{color:#7545e8;font-size:11px;letter-spacing:2px;font-weight:800;text-transform:uppercase}
+.section h2{font-family:'Playfair Display',serif;font-size:35px;margin:9px 0}
+.sub{color:var(--muted);font-size:13px;line-height:1.8}
+.view{font-size:12px;color:#7545e8;font-weight:800}
+.categories{display:grid;grid-template-columns:repeat(6,1fr);gap:15px}
+.category{background:white;border:1px solid #eee;border-radius:15px;padding:24px 10px;text-align:center;transition:.25s}
+.category:hover{transform:translateY(-5px);box-shadow:0 12px 30px #25134d12}
+.category .emoji{font-size:34px}
+.category h3{font-size:12px;margin:13px 0 0}
+.product-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:20px}
+.product{background:white;border-radius:15px;overflow:hidden;border:1px solid #eee;transition:.25s}
+.product:hover{transform:translateY(-5px);box-shadow:0 15px 35px #21133f15}
+.product img{width:100%;height:210px;object-fit:cover;background:#eee}
+.product-info{padding:17px}
+.tag{font-size:9px;letter-spacing:1px;color:#7545e8;font-weight:800;text-transform:uppercase}
+.product h3{font-size:15px;margin:8px 0}
+.product p{font-size:12px;color:var(--muted);line-height:1.6}
+.price{font-size:14px;font-weight:800;margin-top:15px}
+.dark-section{background:#100b20;color:white;padding:65px 6%}
+.dark-inner{max-width:1200px;margin:auto;display:flex;justify-content:space-between;align-items:center;gap:35px;flex-wrap:wrap}
+.dark-section h2{font-family:'Playfair Display',serif;font-size:36px;max-width:550px}
+.dark-section p{color:#c4bdd3;line-height:1.8;font-size:14px;max-width:550px}
+.reseller{background:linear-gradient(120deg,#eee8ff,#e9f2ff);border-radius:20px;padding:35px;margin-top:15px}
+.reseller h2{font-family:'Playfair Display',serif;font-size:32px}
+.reseller p{font-size:14px;color:#625b72;line-height:1.8}
+footer{background:#090613;color:white;padding:55px 6% 25px}
+.footer-grid{max-width:1300px;margin:auto;display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:35px}
+footer h3{font-size:14px}
+footer p,footer a{font-size:12px;color:#aaa4b7;line-height:2;display:block}
+.copyright{text-align:center;border-top:1px solid #ffffff20;margin-top:35px;padding-top:22px;color:#888;font-size:11px}
+@media(max-width:900px){
+.categories{grid-template-columns:repeat(3,1fr)}
+.product-grid{grid-template-columns:repeat(2,1fr)}
+.nav{display:none}
+.footer-grid{grid-template-columns:1fr 1fr}
+}
+@media(max-width:520px){
+header{padding:15px 4%}
+.brand{font-size:21px}
+.search{display:none}
+.hero{padding:65px 6%;min-height:440px}
+.hero h1{font-size:46px}
+.section{padding:48px 5%}
+.section h2{font-size:29px}
+.categories{grid-template-columns:repeat(2,1fr)}
+.product-grid{gap:12px}
+.product img{height:145px}
 .product-info{padding:12px}
-.product h3{font-size:15px;margin:0 0 8px}
-.price{color:#087bea;font-weight:900;margin:8px 0}
-.product button{width:100%}
-.empty{text-align:center;padding:35px;color:#71849b}
-footer{text-align:center;padding:25px;background:#fff;color:#71849b}
-.modal{display:none;position:fixed;inset:0;background:#0008;z-index:10;align-items:center;justify-content:center;padding:15px}
-.modal-box{background:white;border-radius:15px;padding:22px;width:100%;max-width:420px;max-height:90vh;overflow:auto}
-.modal-box input{margin:7px 0}
-.close{float:right;background:#edf5ff;color:#087bea}
-.cart-row{display:flex;justify-content:space-between;gap:10px;border-bottom:1px solid #eee;padding:12px 0}
-.notice{padding:12px;background:#e7f3ff;border-radius:9px;margin:10px 0;font-size:13px}
-@media(max-width:450px){.hero h1{font-size:25px}header{padding:13px 4%}.logo{font-size:21px}}
+.footer-grid{grid-template-columns:1fr 1fr}
+.secondary{margin-left:0}
+}
 </style>
 </head>
+
 <body>
 
+<div class="topbar">
+SAVCEL HUB — YOUR WORLD OF SHOPPING & DIGITAL SERVICES
+</div>
+
 <header>
- <div class="logo">TIK<span>GROW</span></div>
- <nav>
-  <button class="secondary" onclick="showCart()">Cart (<span id="cartCount">0</span>)</button>
-  <button class="primary" onclick="showAuth()">Account</button>
- </nav>
+<a class="brand" href="/">SavCel<span>Hub.</span></a>
+
+<nav class="nav">
+<a href="/">Home</a>
+<a href="#categories">Categories</a>
+<a href="#products">Marketplace</a>
+<a href="#resellers">Become a Reseller</a>
+</nav>
+
+<div class="actions">
+<input class="search" type="search" placeholder="Search products...">
+<a class="login" href="/login">My Account</a>
+</div>
 </header>
 
 <section class="hero">
- <h1>Welcome to TIKGROW Store</h1>
- <p>Shop your favourite goods at great prices. Easy ordering and secure online payment.</p>
- <button style="background:white;color:#087bea" onclick="document.getElementById('shop').scrollIntoView({behavior:'smooth'})">Shop Now</button>
+<div class="hero-content">
+<div class="eyebrow">A premium digital marketplace</div>
+<h1>Everything.<br>In One <span>Destination.</span></h1>
+<p>Discover premium products, instant digital services, data bundles and international connectivity. Shop smarter. Grow bigger. Experience SavCel Hub.</p>
+<a class="primary" href="#categories">EXPLORE MARKETPLACE →</a>
+<a class="secondary" href="#resellers">BECOME A RESELLER</a>
+</div>
 </section>
 
-<div class="search">
- <input id="search" placeholder="Search products..." oninput="loadProducts()">
+<div class="trust">
+<div><span>✦</span> PREMIUM EXPERIENCE</div>
+<div><span>✦</span> SECURE CHECKOUT</div>
+<div><span>✦</span> DIGITAL SERVICES</div>
+<div><span>✦</span> RESELLER OPPORTUNITIES</div>
+</div>
+
+<section class="section" id="categories">
+<div class="section-head">
+<div>
+<div class="kicker">Discover SavCel</div>
+<h2>Explore Collections</h2>
+<p class="sub">Everything you need, carefully organized in one place.</p>
+</div>
+<a class="view" href="#products">EXPLORE ALL →</a>
 </div>
 
 <div class="categories">
- <button class="primary" onclick="setCategory('All')">All Products</button>
- <button class="secondary" onclick="setCategory('Electronics')">Electronics</button>
- <button class="secondary" onclick="setCategory('Fashion')">Fashion</button>
- <button class="secondary" onclick="setCategory('Shoes')">Shoes</button>
- <button class="secondary" onclick="setCategory('Accessories')">Accessories</button>
- <button class="secondary" onclick="setCategory('Other')">Other</button>
+<a class="category" href="#products"><div class="emoji">📶</div><h3>Data Bundles</h3></a>
+<a class="category" href="#products"><div class="emoji">🌍</div><h3>Phone Numbers</h3></a>
+<a class="category" href="#products"><div class="emoji">👟</div><h3>Fashion & Shoes</h3></a>
+<a class="category" href="#products"><div class="emoji">💻</div><h3>Electronics</h3></a>
+<a class="category" href="#products"><div class="emoji">🎓</div><h3>Digital Products</h3></a>
+<a class="category" href="#resellers"><div class="emoji">💎</div><h3>Reseller Hub</h3></a>
+</div>
+</section>
+
+<section class="section" id="products">
+<div class="section-head">
+<div>
+<div class="kicker">The marketplace</div>
+<h2>Featured Collections</h2>
+<p class="sub">Explore some of the product categories coming to SavCel Hub.</p>
+</div>
+<a class="view" href="#products">VIEW ALL →</a>
 </div>
 
-<main id="shop">
- <div class="section-title">
-  <h2>Our Products</h2>
-  <span id="productTotal"></span>
- </div>
- <div id="products" class="products">
-  <div class="empty">Loading products...</div>
- </div>
-</main>
-
-<footer>© 2026 TIKGROW Store. All rights reserved.</footer>
-
-<div class="modal" id="authModal">
- <div class="modal-box">
-  <button class="close" onclick="hideModal('authModal')">Close</button>
-  <h2 id="authTitle">Customer Login</h2>
-  <input id="authName" placeholder="Full name" style="display:none">
-  <input id="authEmail" type="email" placeholder="Email address">
-  <input id="authPassword" type="password" placeholder="Password">
-  <button class="primary" style="width:100%;margin-top:10px" onclick="submitAuth()">Continue</button>
-  <p id="authMessage"></p>
-  <p><a href="#" onclick="toggleAuth();return false">Switch Login / Sign Up</a></p>
- </div>
+<div class="product-grid">
+<div class="product">
+<img src="https://images.unsplash.com/photo-1556656793-08538906a9f8?w=700" alt="Smartphone">
+<div class="product-info"><div class="tag">Technology</div><h3>Smart Electronics</h3><p>Discover electronics and modern gadgets.</p><div class="price">Explore Collection →</div></div>
 </div>
-
-<div class="modal" id="cartModal">
- <div class="modal-box">
-  <button class="close" onclick="hideModal('cartModal')">Close</button>
-  <h2>Your Shopping Cart</h2>
-  <div id="cartItems"></div>
-  <h3 id="cartTotal">Total: GH₵0.00</h3>
-  <button class="primary" style="width:100%" onclick="checkout()">Proceed to Checkout</button>
-  <p id="cartMessage"></p>
- </div>
+<div class="product">
+<img src="https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=700" alt="Premium sneakers">
+<div class="product-info"><div class="tag">Fashion</div><h3>Premium Footwear</h3><p>Discover stylish sneakers and footwear.</p><div class="price">Explore Collection →</div></div>
 </div>
-
-<div class="modal" id="checkoutModal">
- <div class="modal-box">
-  <button class="close" onclick="hideModal('checkoutModal')">Close</button>
-  <h2>Delivery Information</h2>
-  <input id="deliveryPhone" placeholder="Phone number">
-  <input id="deliveryAddress" placeholder="Full delivery address">
-  <div class="notice">You will be redirected to Paystack to pay securely using Mobile Money or Visa.</div>
-  <button class="primary" style="width:100%" onclick="placeOrder()">Continue to Payment</button>
-  <p id="checkoutMessage"></p>
- </div>
+<div class="product">
+<img src="https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=700" alt="Digital payment">
+<div class="product-info"><div class="tag">Digital Services</div><h3>Digital Marketplace</h3><p>Access supported digital products and services.</p><div class="price">Explore Collection →</div></div>
 </div>
+<div class="product">
+<img src="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=700" alt="Connectivity">
+<div class="product-info"><div class="tag">Connectivity</div><h3>Data & Connectivity</h3><p>Explore supported data and number services.</p><div class="price">Explore Collection →</div></div>
+</div>
+</div>
+</section>
 
-<script>
-let products=[];
-let cart=[];
-let category='All';
-let token=localStorage.getItem('tikgrow_token')||'';
-let signup=false;
+<section class="dark-section">
+<div class="dark-inner">
+<div>
+<div class="eyebrow">More than a marketplace</div>
+<h2>Shop. Connect. Build Your Business.</h2>
+<p>SavCel Hub brings shopping and digital services together with opportunities for customers and business-minded resellers.</p>
+</div>
+<a class="primary" href="#resellers">DISCOVER SAVCEL →</a>
+</div>
+</section>
 
-function money(value){
- return 'GH₵'+Number(value||0).toFixed(2);
-}
+<section class="section" id="resellers">
+<div class="reseller">
+<div class="kicker">SavCel Business</div>
+<h2>Build Your Own Reseller Business.</h2>
+<p>Join the SavCel Hub reseller network. Access eligible reseller prices, track your orders and manage your business from your dashboard.</p>
+<a class="primary" href="/register">JOIN THE RESELLER NETWORK →</a>
+</div>
+</section>
 
-async function loadProducts(){
- const box=document.getElementById('products');
- const search=document.getElementById('search').value.toLowerCase();
- try{
-  const response=await fetch('/api/products');
-  const data=await response.json();
-  products=Array.isArray(data)?data:(data.products||[]);
-  const filtered=products.filter(p=>{
-   const matchesSearch=(p.name||'').toLowerCase().includes(search)||
-   (p.description||'').toLowerCase().includes(search);
-   const matchesCategory=category==='All'||p.category===category;
-   return matchesSearch&&matchesCategory&&p.active!==false;
-  });
-  document.getElementById('productTotal').textContent=filtered.length+' products';
-  if(!filtered.length){
-   box.innerHTML='<div class="empty">No products available yet. Please check again later.</div>';
-   return;
-  }
-  box.innerHTML=filtered.map(p=>`
-   <div class="product">
-    <img src="${escapeHTML(p.image_url||'')}" alt="${escapeHTML(p.name||'Product')}" onerror="this.style.display='none'">
-    <div class="product-info">
-     <h3>${escapeHTML(p.name||'Product')}</h3>
-     <div class="price">${money(p.price)}</div>
-     <button class="primary" onclick="addToCart('${p.id}')">Add to Cart</button>
-    </div>
-   </div>`).join('');
- }catch(error){
-  box.innerHTML='<div class="empty">Could not load products. Please refresh the page.</div>';
- }
-}
+<footer>
+<div class="footer-grid">
+<div>
+<a class="brand" href="/">SavCel<span>Hub.</span></a>
+<p>Your premium destination for shopping, digital products, connectivity and reseller services.</p>
+</div>
+<div><h3>Marketplace</h3><a href="#categories">Categories</a><a href="#products">Products</a><a href="#products">Digital Services</a></div>
+<div><h3>Account</h3><a href="/login">Customer Login</a><a href="/register">Create Account</a><a href="/register">Become a Reseller</a></div>
+<div><h3>Support</h3><a href="#">Contact Us</a><a href="#">Help Centre</a><a href="#">Privacy Policy</a></div>
+</div>
+<div class="copyright">© 2026 SavCel Hub. All rights reserved.</div>
+</footer>
 
-function escapeHTML(value){
- return String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-}
-
-function setCategory(value){
- category=value;
- loadProducts();
-}
-
-function addToCart(id){
- const product=products.find(p=>String(p.id)===String(id));
- if(!product)return;
- const existing=cart.find(item=>String(item.product_id)===String(id));
- if(existing)existing.quantity++;
- else cart.push({product_id:id,quantity:1});
- updateCart();
- alert('Product added to cart!');
-}
-
-function updateCart(){
- document.getElementById('cartCount').textContent=cart.reduce((sum,item)=>sum+item.quantity,0);
-}
-
-function showCart(){
- renderCart();
- document.getElementById('cartModal').style.display='flex';
-}
-
-function renderCart(){
- const box=document.getElementById('cartItems');
- let total=0;
- if(!cart.length){
-  box.innerHTML='<div class="empty">Your cart is empty.</div>';
- }else{
-  box.innerHTML=cart.map(item=>{
-   const p=products.find(x=>String(x.id)===String(item.product_id));
-   if(!p)return '';
-   total+=Number(p.price)*item.quantity;
-   return `<div class="cart-row">
-    <div>${escapeHTML(p.name)}<br>${money(p.price)} × ${item.quantity}</div>
-    <button class="secondary" onclick="removeCart('${item.product_id}')">Remove</button>
-   </div>`;
-  }).join('');
- }
- document.getElementById('cartTotal').textContent='Total: '+money(total);
-}
-
-function removeCart(id){
- cart=cart.filter(item=>String(item.product_id)!==String(id));
- updateCart();
- renderCart();
-}
-
-function showAuth(){
- document.getElementById('authModal').style.display='flex';
-}
-
-function hideModal(id){
- document.getElementById(id).style.display='none';
-}
-
-function toggleAuth(){
- signup=!signup;
- document.getElementById('authTitle').textContent=signup?'Create Account':'Customer Login';
- document.getElementById('authName').style.display=signup?'block':'none';
- document.getElementById('authMessage').textContent='';
-}
-
-async function submitAuth(){
- const message=document.getElementById('authMessage');
- const payload={
-  email:document.getElementById('authEmail').value,
-  password:document.getElementById('authPassword').value
- };
- if(signup)payload.name=document.getElementById('authName').value;
- message.textContent='Please wait...';
- try{
-  const response=await fetch('/api/auth/'+(signup?'register':'login'),{
-   method:'POST',
-   headers:{'Content-Type':'application/json'},
-   body:JSON.stringify(payload)
-  });
-  const data=await response.json();
-  if(!response.ok)throw new Error(data.error||'Unable to continue');
-  token=data.token;
-  if(!token)throw new Error('Login token was not returned');
-  localStorage.setItem('tikgrow_token',token);
-  message.textContent='Account ready!';
-  setTimeout(()=>hideModal('authModal'),700);
- }catch(error){
-  message.textContent=error.message;
- }
-}
-
-function checkout(){
- if(!cart.length){
-  document.getElementById('cartMessage').textContent='Add products first.';
-  return;
- }
- if(!token){
-  hideModal('cartModal');
-  showAuth();
-  document.getElementById('authMessage').textContent='Please log in before checkout.';
-  return;
- }
- hideModal('cartModal');
- document.getElementById('checkoutModal').style.display='flex';
-}
-
-async function placeOrder(){
- const message=document.getElementById('checkoutMessage');
- const phone=document.getElementById('deliveryPhone').value.trim();
- const address=document.getElementById('deliveryAddress').value.trim();
- if(!phone||!address){
-  message.textContent='Enter your phone number and delivery address.';
-  return;
- }
- message.textContent='Preparing secure payment...';
- try{
-  const response=await fetch('/api/checkout',{
-   method:'POST',
-   headers:{
-    'Content-Type':'application/json',
-    'Authorization':'Bearer '+token
-   },
-   body:JSON.stringify({
-    items:cart,
-    phone:phone,
-    delivery_address:address
-   })
-  });
-  const data=await response.json();
-  if(!response.ok)throw new Error(data.error||'Checkout failed');
-  if(!data.authorization_url)throw new Error('Payment link was not returned');
-  window.location.href=data.authorization_url;
- }catch(error){
-  message.textContent=error.message;
- }
-}
-
-updateCart();
-loadProducts();
-</script>
 </body>
 </html>
