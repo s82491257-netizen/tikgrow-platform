@@ -1,0 +1,163 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#eaf6ff">
+<title>Store | SavCel Hub</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#f3f9ff;color:#17324d;font-family:Arial,sans-serif}
+header{background:white;padding:17px 5%;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #dcecf9}
+.logo{font-size:23px;font-weight:900;color:#1684d8}
+header a{color:#1684d8;text-decoration:none;font-weight:bold}
+main{max-width:1200px;margin:auto;padding:25px 18px}
+h1{margin-bottom:8px}
+.muted{color:#71879c}
+.categories{display:flex;gap:10px;overflow:auto;padding:15px 0}
+.category{border:1px solid #b9ddf7;background:white;color:#1684d8;border-radius:25px;padding:10px 17px;white-space:nowrap;cursor:pointer}
+.category.active{background:#1684d8;color:white}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-top:20px}
+.product{background:white;border:1px solid #dcecf9;border-radius:16px;overflow:hidden;box-shadow:0 5px 18px #1684d80d}
+.product img{width:100%;height:180px;object-fit:cover;background:#e5f3ff}
+.product-info{padding:15px}
+.product h3{margin:5px 0 8px;font-size:16px}
+.price{font-weight:900;color:#087bc9;font-size:19px}
+.description{font-size:13px;color:#71879c;min-height:34px}
+.add{width:100%;padding:12px;border:0;border-radius:9px;background:#1684d8;color:white;font-weight:bold;cursor:pointer;margin-top:12px}
+.empty{background:white;padding:30px;text-align:center;border-radius:15px;color:#71879c}
+#notice{margin:15px 0;color:#087bc9}
+@media(max-width:850px){.grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:420px){.grid{gap:10px}.product img{height:135px}.product-info{padding:11px}}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">SavCel Hub</div>
+  <div>
+    <a href="/">Home</a> &nbsp; | &nbsp;
+    <a href="/account">My Account</a>
+  </div>
+</header>
+
+<main>
+  <h1>Discover Our Store</h1>
+  <p class="muted">Shop quality products and digital services at SavCel Hub.</p>
+
+  <div class="categories" id="categories">
+    <button class="category active" data-category="all">All Products</button>
+  </div>
+
+  <p id="notice" aria-live="polite"></p>
+  <div class="grid" id="products">
+    <div class="empty">Loading products...</div>
+  </div>
+</main>
+
+<script>
+let allProducts=[];
+let selectedCategory="all";
+const money=value=>"GH₵"+Number(value).toFixed(2);
+
+async function loadStore(){
+  const container=document.getElementById("products");
+  try{
+    const [productResponse,categoryResponse]=await Promise.all([
+      fetch("/api/products",{credentials:"same-origin"}),
+      fetch("/api/products/categories",{credentials:"same-origin"})
+    ]);
+
+    if(!productResponse.ok) throw new Error("Products could not be loaded.");
+
+    const productData=await productResponse.json();
+    const categoryData=categoryResponse.ok
+      ? await categoryResponse.json()
+      : {categories:[]};
+
+    allProducts=productData.products||[];
+    showCategories(categoryData.categories||[]);
+    renderProducts();
+  }catch(error){
+    container.innerHTML='<div class="empty">Unable to load products. Please refresh the page.</div>';
+  }
+}
+
+function showCategories(categories){
+  const holder=document.getElementById("categories");
+  holder.innerHTML='<button class="category active" data-category="all">All Products</button>';
+
+  categories.forEach(category=>{
+    const button=document.createElement("button");
+    button.className="category";
+    button.dataset.category=String(category.id);
+    button.textContent=category.name;
+    holder.appendChild(button);
+  });
+
+  holder.addEventListener("click",event=>{
+    const button=event.target.closest("button[data-category]");
+    if(!button)return;
+    selectedCategory=button.dataset.category;
+    holder.querySelectorAll("button").forEach(item=>{
+      item.classList.toggle("active",item===button);
+    });
+    renderProducts();
+  });
+}
+
+function renderProducts(){
+  const container=document.getElementById("products");
+  const filtered=selectedCategory==="all"
+    ? allProducts
+    : allProducts.filter(p=>String(p.category_id||"")===selectedCategory ||
+       String(p.category||"")===selectedCategory);
+
+  container.innerHTML="";
+
+  if(!filtered.length){
+    container.innerHTML='<div class="empty">No products available in this category yet.</div>';
+    return;
+  }
+
+  filtered.forEach(product=>{
+    const card=document.createElement("article");
+    card.className="product";
+
+    const img=document.createElement("img");
+    img.src=product.image_url||"https://placehold.co/600x400/e5f3ff/1684d8?text=SavCel+Hub";
+    img.alt=product.name;
+    img.onerror=()=>{img.src="https://placehold.co/600x400/e5f3ff/1684d8?text=SavCel+Hub";};
+
+    const info=document.createElement("div");
+    info.className="product-info";
+
+    const title=document.createElement("h3");
+    title.textContent=product.name;
+
+    const description=document.createElement("p");
+    description.className="description";
+    description.textContent=product.description||product.category||"Quality product from SavCel Hub";
+
+    const price=document.createElement("div");
+    price.className="price";
+    price.textContent=money(product.price);
+
+    const button=document.createElement("button");
+    button.className="add";
+    button.textContent="Add to Cart";
+    button.addEventListener("click",()=>{
+      document.getElementById("notice").textContent=
+        "Cart checkout is coming next. Product: "+product.name;
+    });
+
+    info.append(title,description,price,button);
+    card.append(img,info);
+    container.appendChild(card);
+  });
+}
+
+loadStore();
+</script>
+</body>
+</html>
